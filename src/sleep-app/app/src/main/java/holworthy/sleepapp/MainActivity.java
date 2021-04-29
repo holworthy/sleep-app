@@ -118,7 +118,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 		return sleepFile;
 	}
 
-	private File[] getSleepFiles() {
+	public static File[] getSleepFiles() {
 		File sdcard = Environment.getExternalStorageDirectory();
 		File sleepFolder = new File(sdcard, "/sleepapp");
 		if(!sleepFolder.exists())
