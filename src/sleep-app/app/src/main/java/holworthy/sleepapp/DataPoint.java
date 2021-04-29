@@ -2,11 +2,11 @@ package holworthy.sleepapp;
 
 public class DataPoint {
 	private long timestamp;
-	private long xAcceleration;
-	private long yAcceleration;
-	private long zAcceleration;
+	private float xAcceleration;
+	private float yAcceleration;
+	private float zAcceleration;
 
-	public DataPoint(long timestamp, long xAcceleration, long yAcceleration, long zAcceleration) {
+	public DataPoint(long timestamp, float xAcceleration, float yAcceleration, float zAcceleration) {
 		this.timestamp = timestamp;
 		this.xAcceleration = xAcceleration;
 		this.yAcceleration = yAcceleration;
@@ -29,15 +29,15 @@ public class DataPoint {
 		return timestamp;
 	}
 
-	public long getXAcceleration() {
+	public float getXAcceleration() {
 		return xAcceleration;
 	}
 
-	public long getYAcceleration() {
+	public float getYAcceleration() {
 		return yAcceleration;
 	}
 
-	public long getZAcceleration() {
+	public float getZAcceleration() {
 		return zAcceleration;
 	}
 }
