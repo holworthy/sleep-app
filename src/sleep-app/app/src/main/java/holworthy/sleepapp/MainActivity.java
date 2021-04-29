@@ -16,11 +16,14 @@ import android.view.View;
 import android.widget.Button;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.io.Reader;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -88,6 +91,26 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 		if(!sleepFolder.exists())
 			return new File[0];
 		return sleepFolder.listFiles();
+	}
+
+	private DataPoint[] readSleepFile(File sleepFile) throws IOException {
+		FileInputStream fileInputStream = new FileInputStream(sleepFile);
+		DataPointInputStream dataPointInputStream = new DataPointInputStream(fileInputStream);
+		ArrayList<DataPoint> dataPoints = new ArrayList<>();
+		while(dataPointInputStream.available() > 0)
+			dataPoints.add(dataPointInputStream.readDataPoint());
+		dataPointInputStream.close();
+		fileInputStream.close();
+		return (DataPoint[]) dataPoints.toArray();
+	}
+
+	private void writeSleepFile(File sleepFile, DataPoint[] dataPoints) throws IOException {
+		FileOutputStream fileOutputStream = new FileOutputStream(sleepFile);
+		DataPointOutputStream dataPointOutputStream = new DataPointOutputStream(fileOutputStream);
+		for(DataPoint dataPoint : dataPoints)
+			dataPointOutputStream.writeDataPoint(dataPoint);
+		dataPointOutputStream.close();
+		fileOutputStream.close();
 	}
 
 	@Override
