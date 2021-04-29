@@ -25,6 +25,16 @@ public class DataPoint {
 		);
 	}
 
+	@Override
+	public String toString() {
+		return "DataPoint{" +
+				"timestamp=" + timestamp +
+				", xAcceleration=" + xAcceleration +
+				", yAcceleration=" + yAcceleration +
+				", zAcceleration=" + zAcceleration +
+				'}';
+	}
+
 	public long getTimestamp() {
 		return timestamp;
 	}
