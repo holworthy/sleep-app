@@ -1,10 +1,10 @@
 package holworthy.sleepapp;
 
 public class DataPoint {
-	public long timestamp;
-	public long xAcceleration;
-	public long yAcceleration;
-	public long zAcceleration;
+	private long timestamp;
+	private long xAcceleration;
+	private long yAcceleration;
+	private long zAcceleration;
 
 	public DataPoint(long timestamp, long xAcceleration, long yAcceleration, long zAcceleration) {
 		this.timestamp = timestamp;
@@ -14,7 +14,8 @@ public class DataPoint {
 	}
 
 	public static DataPoint lerp(DataPoint a, DataPoint b, long timestamp) {
-		assert a.timestamp < b.timestamp && a.timestamp <= timestamp && b.timestamp >= timestamp;
+		if(a.timestamp > timestamp || b.timestamp < timestamp)
+			return null;
 		float t = (timestamp - a.timestamp) / (float) (b.timestamp - a.timestamp);
 		return new DataPoint(
 			timestamp,
@@ -22,5 +23,21 @@ public class DataPoint {
 			(long) (a.yAcceleration + (b.yAcceleration - a.yAcceleration) * t),
 			(long) (a.zAcceleration + (b.zAcceleration - a.zAcceleration) * t)
 		);
+	}
+
+	public long getTimestamp() {
+		return timestamp;
+	}
+
+	public long getXAcceleration() {
+		return xAcceleration;
+	}
+
+	public long getYAcceleration() {
+		return yAcceleration;
+	}
+
+	public long getZAcceleration() {
+		return zAcceleration;
 	}
 }
