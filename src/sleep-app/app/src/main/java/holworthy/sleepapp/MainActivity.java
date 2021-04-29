@@ -1,18 +1,30 @@
 package holworthy.sleepapp;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.Manifest;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
+import android.os.Build;
 import android.os.Bundle;
+import android.os.Environment;
 import android.os.PowerManager;
 import android.view.View;
 import android.widget.Button;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 
 public class MainActivity extends AppCompatActivity implements SensorEventListener {
 	private SensorManager sensorManager;
@@ -22,6 +34,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 	private ArrayList<DataPoint> dataPoints;
 	private PowerManager powerManager;
 	private PowerManager.WakeLock wakeLock;
+	private SimpleDateFormat simpleDateFormat;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -34,6 +47,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
 		dataPoints = new ArrayList<>();
 		recordingSleep = false;
+
+		simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss");
 
 		startButton = findViewById(R.id.startButton);
 		startButton.setOnClickListener(v -> {
@@ -50,6 +65,29 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 			if(wakeLock.isHeld())
 				wakeLock.release();
 		});
+	}
+
+	private File makeSleepFile() {
+		File sdcard = Environment.getExternalStorageDirectory();
+		File sleepFolder = new File(sdcard, "/sleepapp");
+		File sleepFile = new File(sleepFolder, simpleDateFormat.format(new Date()) + ".slp");
+		sleepFolder.mkdirs();
+		try {
+			if(!sleepFile.createNewFile())
+				return null;
+		} catch (IOException e) {
+			return null;
+		}
+
+		return sleepFile;
+	}
+
+	private File[] getSleepFiles() {
+		File sdcard = Environment.getExternalStorageDirectory();
+		File sleepFolder = new File(sdcard, "/sleepapp");
+		if(!sleepFolder.exists())
+			return new File[0];
+		return sleepFolder.listFiles();
 	}
 
 	@Override
