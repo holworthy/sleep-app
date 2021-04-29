@@ -1,10 +1,12 @@
 package holworthy.sleepapp;
 
+import android.Manifest;
 import android.content.Intent;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.PowerManager;
@@ -44,8 +46,15 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 		recordingSleep = false;
 
 		simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss");
+		
+		// TODO: check errors on write
+
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+			requestPermissions(new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.READ_EXTERNAL_STORAGE}, 0);
+		}
 
 		startButton = findViewById(R.id.startButton);
+		// TODO: disable on click
 		startButton.setOnClickListener(v -> {
 			recordingSleep = true;
 			sensorManager.registerListener(MainActivity.this,sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER), 50000);
@@ -78,6 +87,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 			})).start();
 		});
 
+		// TODO: disable on click
 		stopButton = findViewById(R.id.stopButton);
 		stopButton.setOnClickListener(v -> {
 			recordingSleep = false;
