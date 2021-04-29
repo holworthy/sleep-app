@@ -62,6 +62,13 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 			requestPermissions(new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.READ_EXTERNAL_STORAGE}, 0);
 		}
 
+		analyseButton = findViewById(R.id.analyseButton);
+		analyseButton.setOnClickListener(v -> {
+			Intent intent = new Intent(MainActivity.this, SleepListViewActivity.class);
+			startActivity(intent);
+			overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left);
+		});
+
 		startButton = findViewById(R.id.startButton);
 		startButton.setOnClickListener(v -> {
 			recordingSleep = true;
@@ -117,13 +124,6 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 			startButton.setEnabled(true);
 		});
 		stopButton.setEnabled(false);
-
-		analyseButton = findViewById(R.id.analyseButton);
-		analyseButton.setOnClickListener(v -> {
-			Intent intent = new Intent(this, SleepListViewActivity.class);
-			startActivity(intent);
-			overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left);
-		});
 	}
 
 	private File makeSleepFile() {
@@ -144,7 +144,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 		File sdcard = Environment.getExternalStorageDirectory();
 		File sleepFolder = new File(sdcard, "/sleepapp");
 		if(!sleepFolder.exists())
-			return new File[0];
+			return new File[]{};
 		return sleepFolder.listFiles();
 	}
 

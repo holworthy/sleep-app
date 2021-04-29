@@ -2,9 +2,11 @@ package holworthy.sleepapp;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.view.Gravity;
 import android.view.MenuItem;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
+import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
@@ -27,6 +29,9 @@ public class SleepListViewActivity extends AppCompatActivity {
             sleepFiles.add(new SleepFile(file));
 
         fileListView = findViewById(R.id.fileListView);
+        TextView emptyTextView = findViewById(R.id.empty);
+        fileListView.setEmptyView(emptyTextView);
+
         ArrayAdapter<SleepFile> adapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, sleepFiles);
         fileListView.setAdapter(adapter);
         fileListView.setOnItemClickListener((adapterView, view, position, id) -> {
@@ -36,6 +41,7 @@ public class SleepListViewActivity extends AppCompatActivity {
             startActivity(intent);
             overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left);
         });
+        adapter.notifyDataSetChanged();
     }
 
     @Override
