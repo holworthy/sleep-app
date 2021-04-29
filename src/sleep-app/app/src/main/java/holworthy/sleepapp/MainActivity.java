@@ -10,6 +10,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.PowerManager;
+import android.os.SystemClock;
 import android.widget.Button;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -57,7 +58,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 		// TODO: disable on click
 		startButton.setOnClickListener(v -> {
 			recordingSleep = true;
-			sensorManager.registerListener(MainActivity.this,sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER), 50000);
+			sensorManager.registerListener(MainActivity.this, sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER), 50000);
 			if(!wakeLock.isHeld())
 				wakeLock.acquire();
 
@@ -67,7 +68,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
 				while(recordingSleep) {
 					try {
-						Thread.sleep(60 * 1000);
+						Thread.sleep(60 * 100);
 					} catch (InterruptedException e) {
 						e.printStackTrace();
 					}
@@ -126,7 +127,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 		return sleepFolder.listFiles();
 	}
 
-	private ArrayList<DataPoint> readSleepFile(File sleepFile) throws IOException {
+	public static ArrayList<DataPoint> readSleepFile(File sleepFile) throws IOException {
 		FileInputStream fileInputStream = new FileInputStream(sleepFile);
 		DataPointInputStream dataPointInputStream = new DataPointInputStream(fileInputStream);
 		ArrayList<DataPoint> dataPoints = new ArrayList<>();
@@ -150,7 +151,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 	public void onSensorChanged(SensorEvent event) {
 		if (event.sensor.getType() == Sensor.TYPE_ACCELEROMETER && recordingSleep) {
 			float[] values = event.values;
-			dataPoints.add(new DataPoint(System.currentTimeMillis(), values[0], values[1], values[2]));
+			dataPoints.add(new DataPoint(System.currentTimeMillis() + (event.timestamp - SystemClock.elapsedRealtimeNanos()) / 1000000, values[0], values[1], values[2]));
 		}
 	}
 

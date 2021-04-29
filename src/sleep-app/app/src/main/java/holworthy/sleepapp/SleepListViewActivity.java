@@ -1,7 +1,10 @@
 package holworthy.sleepapp;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.MenuItem;
+import android.view.View;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 
@@ -34,6 +37,16 @@ public class SleepListViewActivity extends AppCompatActivity {
         fileListView = findViewById(R.id.fileListView);
         ArrayAdapter<SleepFile> adapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, sleepFiles);
         fileListView.setAdapter(adapter);
+        fileListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> adapterView, View view, int position, long id) {
+                SleepFile sleepFile = (SleepFile) adapterView.getItemAtPosition(position);
+
+                Intent intent = new Intent(SleepListViewActivity.this, AnalysisActivity.class);
+                intent.putExtra("file", sleepFile.getFile());
+                startActivity(intent);
+            }
+        });
     }
 
     @Override
