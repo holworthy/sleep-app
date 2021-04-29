@@ -57,6 +57,12 @@ public class AnalysisActivity extends AppCompatActivity {
 		return true;
 	}
 
+	@Override
+	public void finish() {
+		super.finish();
+		overridePendingTransition(R.anim.slide_in_left, R.anim.slide_out_right);
+	}
+
 	private ArrayList<DataPoint> fixData(ArrayList<DataPoint> brokenDataPoints) {
 		ArrayList<DataPoint> fixedDataPoints = new ArrayList<>();
 		DataPoint last = brokenDataPoints.get(brokenDataPoints.size() - 1);

@@ -13,6 +13,7 @@ import android.os.PowerManager;
 import android.os.SystemClock;
 import android.widget.Button;
 
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
 import java.io.File;
@@ -33,6 +34,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 	private PowerManager.WakeLock wakeLock;
 	private SimpleDateFormat simpleDateFormat;
 	private Button analyseButton;
+	private AlertDialog storageAlert;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -47,6 +49,12 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 		recordingSleep = false;
 
 		simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss");
+
+		AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+		builder.setMessage("Could not create sleep file. Make sure you have given this app storage permissions.");
+		builder.setPositiveButton("Ok", (dialogInterface, id) -> storageAlert.cancel());
+		builder.setCancelable(false);
+		storageAlert = builder.create();
 		
 		// TODO: check errors on write
 
@@ -55,15 +63,22 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 		}
 
 		startButton = findViewById(R.id.startButton);
-		// TODO: disable on click
 		startButton.setOnClickListener(v -> {
 			recordingSleep = true;
 			sensorManager.registerListener(MainActivity.this, sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER), 50000);
 			if(!wakeLock.isHeld())
 				wakeLock.acquire();
 
-			(new Thread(() -> {
+			startButton.setEnabled(false);
+			stopButton.setEnabled(true);
+
+			Thread savingThread = new Thread(() -> {
 				File sleepFile = makeSleepFile();
+				if(sleepFile == null) {
+					startButton.post(() -> storageAlert.show());
+					return;
+				}
+
 				System.out.println("Made a sleep file " + sleepFile);
 
 				while(recordingSleep) {
@@ -85,22 +100,29 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 						e.printStackTrace();
 					}
 				}
-			})).start();
+
+				System.out.println("Done writing");
+			}, "Saving-Thread");
+			savingThread.start();
 		});
 
-		// TODO: disable on click
 		stopButton = findViewById(R.id.stopButton);
 		stopButton.setOnClickListener(v -> {
 			recordingSleep = false;
 			sensorManager.unregisterListener(MainActivity.this);
 			if(wakeLock.isHeld())
 				wakeLock.release();
+
+			stopButton.setEnabled(false);
+			startButton.setEnabled(true);
 		});
+		stopButton.setEnabled(false);
 
 		analyseButton = findViewById(R.id.analyseButton);
 		analyseButton.setOnClickListener(v -> {
 			Intent intent = new Intent(this, SleepListViewActivity.class);
 			startActivity(intent);
+			overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left);
 		});
 	}
 
@@ -115,7 +137,6 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 		} catch (IOException e) {
 			return null;
 		}
-
 		return sleepFile;
 	}
 
@@ -149,7 +170,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
 	@Override
 	public void onSensorChanged(SensorEvent event) {
-		if (event.sensor.getType() == Sensor.TYPE_ACCELEROMETER && recordingSleep) {
+		if (event.sensor.getType() == Sensor.TYPE_ACCELEROMETER) {
 			float[] values = event.values;
 			dataPoints.add(new DataPoint(System.currentTimeMillis() + (event.timestamp - SystemClock.elapsedRealtimeNanos()) / 1000000, values[0], values[1], values[2]));
 		}
