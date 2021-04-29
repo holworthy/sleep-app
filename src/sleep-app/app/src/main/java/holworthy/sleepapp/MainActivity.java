@@ -1,32 +1,23 @@
 package holworthy.sleepapp;
 
-import androidx.annotation.NonNull;
-import androidx.appcompat.app.AppCompatActivity;
-
-import android.Manifest;
+import android.content.Intent;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.PowerManager;
-import android.view.View;
 import android.widget.Button;
+
+import androidx.appcompat.app.AppCompatActivity;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.Reader;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Date;
 
 public class MainActivity extends AppCompatActivity implements SensorEventListener {
@@ -38,6 +29,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 	private PowerManager powerManager;
 	private PowerManager.WakeLock wakeLock;
 	private SimpleDateFormat simpleDateFormat;
+	private Button analyseButton;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -67,6 +59,12 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 			sensorManager.unregisterListener(MainActivity.this);
 			if(wakeLock.isHeld())
 				wakeLock.release();
+		});
+
+		analyseButton = findViewById(R.id.analyseButton);
+		analyseButton.setOnClickListener(v -> {
+			Intent intent = new Intent(this, SleepListViewActivity.class);
+			startActivity(intent);
 		});
 	}
 
