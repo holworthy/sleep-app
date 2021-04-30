@@ -1,18 +1,24 @@
 package holworthy.sleepapp;
 
+import android.content.Context;
 import android.content.Intent;
+import android.graphics.Typeface;
 import android.os.Bundle;
-import android.view.Gravity;
 import android.view.MenuItem;
+import android.view.View;
+import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
+import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.List;
 
 public class SleepListViewActivity extends AppCompatActivity {
     private ListView fileListView;
@@ -32,7 +38,53 @@ public class SleepListViewActivity extends AppCompatActivity {
         TextView emptyTextView = findViewById(R.id.empty);
         fileListView.setEmptyView(emptyTextView);
 
-        ArrayAdapter<SleepFile> adapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, sleepFiles);
+        class MyArrayAdapter extends ArrayAdapter<SleepFile> {
+            private ArrayList<SleepFile> sleepFiles;
+
+            public MyArrayAdapter(@NonNull Context context, @NonNull List<SleepFile> sleepFiles) {
+                super(context, -1, sleepFiles);
+                this.sleepFiles = (ArrayList<SleepFile>) sleepFiles;
+            }
+
+            @NonNull
+            @Override
+            public View getView(int position, @Nullable View convertView, @NonNull ViewGroup parent) {
+                SleepFile sleepFile = sleepFiles.get(position);
+                LinearLayout linearLayout = new LinearLayout(SleepListViewActivity.this);
+                linearLayout.setOrientation(LinearLayout.VERTICAL);
+                linearLayout.setPadding(30, 30, 30, 30);
+
+                TextView titleTextView = new TextView(SleepListViewActivity.this);
+                titleTextView.setText(sleepFile.toString());
+                titleTextView.setTypeface(Typeface.DEFAULT_BOLD);
+                linearLayout.addView(titleTextView);
+
+                LinearLayout infoLayout = new LinearLayout(SleepListViewActivity.this);
+                infoLayout.setOrientation(LinearLayout.HORIZONTAL);
+                linearLayout.addView(infoLayout);
+
+                TextView durationTextView = new TextView(SleepListViewActivity.this);
+                Thread thread = new Thread(() -> {
+                    long duration;
+                    try {
+                        duration = MainActivity.getSleepFileLength(sleepFile.getFile());
+                    } catch (Exception e) {
+                        duration = 0;
+                    }
+                    long hours = duration / (1000 * 60 * 60);
+                    long minutes = (duration / (1000 * 60)) % 60;
+                    String message = hours == 0 && minutes == 0 ? "0 minutes" : hours == 0 ? minutes + " minute" + (minutes == 1 ? "" : "s") : minutes == 0 ? hours + " hour" + (hours == 1 ? "" : "s") : hours + " hour" + (hours == 1 ? "" : "s") + " " + minutes + " minute" + (minutes == 1 ? "" : "s");
+                    durationTextView.post(() -> durationTextView.setText(message));
+                });
+                thread.start();
+                durationTextView.setText("Loading...");
+                infoLayout.addView(durationTextView);
+
+                return linearLayout;
+            }
+        }
+
+        MyArrayAdapter adapter = new MyArrayAdapter(this, sleepFiles);
         fileListView.setAdapter(adapter);
         fileListView.setOnItemClickListener((adapterView, view, position, id) -> {
             SleepFile sleepFile = (SleepFile) adapterView.getItemAtPosition(position);

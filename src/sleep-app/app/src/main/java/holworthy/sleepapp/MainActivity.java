@@ -15,7 +15,9 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.RandomAccessFile;
 import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity {
@@ -117,5 +119,15 @@ public class MainActivity extends AppCompatActivity {
 		dataPointInputStream.close();
 		fileInputStream.close();
 		return dataPoints;
+	}
+
+	public static long getSleepFileLength(File sleepFile) throws IOException {
+		RandomAccessFile randomAccessFile = new RandomAccessFile(sleepFile, "r");
+		randomAccessFile.seek(0);
+		long start = randomAccessFile.readLong();
+		randomAccessFile.seek(randomAccessFile.length() - 20);
+		long end = randomAccessFile.readLong();
+		randomAccessFile.close();
+		return end - start;
 	}
 }
