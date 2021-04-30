@@ -6,6 +6,8 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import android.os.Bundle;
 import android.view.MenuItem;
+import android.view.ViewGroup;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import java.io.File;
@@ -47,7 +49,11 @@ public class AnalysisActivity extends AppCompatActivity {
 
 		dataPoints = fixData(dataPoints);
 
-		// send data to graph
+		LinearLayout graphWrapper = findViewById(R.id.GraphLayoutWrapper);
+		DataPointGraph graph = new DataPointGraph(this, dataPoints);
+		graph.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, 800, 1f));
+		graphWrapper.addView(graph);
+
 
 		topLeftText = findViewById(R.id.TopLeftText);
 		topLeftText.setText("Fall asleep hour");
