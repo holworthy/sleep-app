@@ -69,7 +69,7 @@ public class SleepService extends Service implements Runnable, SensorEventListen
 		NotificationCompat.Builder builder = new NotificationCompat.Builder(this, "services");
 		builder.setContentTitle("Recording Sleep");
 		builder.setContentText("The app will run in the background");
-		builder.setSmallIcon(R.drawable.ic_launcher_foreground);
+		builder.setSmallIcon(R.drawable.bed_icon);
 		builder.setContentIntent(PendingIntent.getActivity(this, 0, new Intent(this, MainActivity.class), 0));
 		Notification notification = builder.build();
 

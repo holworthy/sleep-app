@@ -25,5 +25,4 @@
         </activity>
         <service android:name=".SleepService" />
     </application>
-
 </manifest>
