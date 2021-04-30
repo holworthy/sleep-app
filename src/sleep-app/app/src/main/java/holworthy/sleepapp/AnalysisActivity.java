@@ -21,34 +21,37 @@ public class AnalysisActivity extends AppCompatActivity {
 		ActionBar actionBar = getSupportActionBar();
 		actionBar.setDisplayHomeAsUpEnabled(true);
 
-//		File sleepFile = (File) getIntent().getSerializableExtra("file");
-//		System.out.println(sleepFile);
-//		if(sleepFile == null) {
-//			finish();
-//			return;
-//		}
-//
-//		ArrayList<DataPoint> dataPoints;
-//		try {
-//			dataPoints = MainActivity.readSleepFile(sleepFile);
-//		} catch (IOException e) {
-//			e.printStackTrace();
-//			// TODO: error and then exit
-//			return;
-//		}
-//
-//		if(dataPoints.size() == 0)
-//			return; // TODO: error
-//
-//		dataPoints = fixData(dataPoints);
-//
-//		int seconds = dataPoints.size() / 20;
-//		for(int chunk = 0; chunk < seconds; chunk++) {
-//			float sum = 0;
-//			for(int i = chunk * 20; i < (chunk + 1) * 20; i++)
-//				sum += dataPoints.get(i).getAcceleration();
-//			System.out.println(chunk + ": " + sum);
-//		}
+		File sleepFile = (File) getIntent().getSerializableExtra("file");
+		System.out.println(sleepFile);
+		if(sleepFile == null) {
+			finish();
+			return;
+		}
+
+		ArrayList<DataPoint> dataPoints;
+		try {
+			dataPoints = MainActivity.readSleepFile(sleepFile);
+		} catch (IOException e) {
+			e.printStackTrace();
+			// TODO: error and then exit
+			return;
+		}
+
+		if(dataPoints.size() == 0)
+			return; // TODO: error
+
+		dataPoints = fixData(dataPoints);
+
+		int seconds = dataPoints.size() / 20;
+		for(int chunk = 0; chunk < seconds; chunk++) {
+			float sum = 0;
+			for(int i = chunk * 20; i < (chunk + 1) * 20; i++)
+				sum += dataPoints.get(i).getAcceleration();
+			System.out.println(chunk + ": " + sum);
+		}
+
+		System.out.println(dataPoints.get(0));
+		System.out.println(dataPoints.get(dataPoints.size() - 1));
 	}
 
 	@Override

@@ -1,16 +1,13 @@
 package holworthy.sleepapp;
 
 import android.Manifest;
+import android.content.ComponentName;
 import android.content.Intent;
-import android.hardware.Sensor;
-import android.hardware.SensorEvent;
-import android.hardware.SensorEventListener;
-import android.hardware.SensorManager;
+import android.content.ServiceConnection;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
-import android.os.PowerManager;
-import android.os.SystemClock;
+import android.os.IBinder;
 import android.widget.Button;
 
 import androidx.appcompat.app.AlertDialog;
@@ -18,48 +15,39 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 
-public class MainActivity extends AppCompatActivity implements SensorEventListener {
-	private SensorManager sensorManager;
-	private boolean recordingSleep;
+public class MainActivity extends AppCompatActivity {
+
 	private Button startButton;
 	private Button stopButton;
-	private ArrayList<DataPoint> dataPoints;
-	private PowerManager powerManager;
-	private PowerManager.WakeLock wakeLock;
-	private SimpleDateFormat simpleDateFormat;
 	private Button analyseButton;
 	private AlertDialog storageAlert;
+	private SleepService sleepService;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
 
-		powerManager = (PowerManager) getSystemService(POWER_SERVICE);
-		wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "sleepapp:lock");
-		sensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
-
-		dataPoints = new ArrayList<>();
-		recordingSleep = false;
-
-		simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss");
-
 		AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
 		builder.setMessage("Could not create sleep file. Make sure you have given this app storage permissions.");
 		builder.setPositiveButton("Ok", (dialogInterface, id) -> storageAlert.cancel());
 		builder.setCancelable(false);
 		storageAlert = builder.create();
-		
-		// TODO: check errors on write
 
-		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-			requestPermissions(new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.READ_EXTERNAL_STORAGE}, 0);
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+			requestPermissions(new String[]{
+				Manifest.permission.WRITE_EXTERNAL_STORAGE,
+				Manifest.permission.READ_EXTERNAL_STORAGE,
+				Manifest.permission.FOREGROUND_SERVICE
+			}, 1);
+		} else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+			requestPermissions(new String[]{
+				Manifest.permission.WRITE_EXTERNAL_STORAGE,
+				Manifest.permission.READ_EXTERNAL_STORAGE
+			}, 0);
 		}
 
 		analyseButton = findViewById(R.id.analyseButton);
@@ -70,74 +58,46 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 		});
 
 		startButton = findViewById(R.id.startButton);
-		startButton.setOnClickListener(v -> {
-			recordingSleep = true;
-			sensorManager.registerListener(MainActivity.this, sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER), 50000);
-			if(!wakeLock.isHeld())
-				wakeLock.acquire();
+		stopButton = findViewById(R.id.stopButton);
 
+
+		Intent sleepServiceIntent = new Intent(this, SleepService.class);
+		class MyServiceConnection implements ServiceConnection {
+			@Override
+			public void onServiceConnected(ComponentName componentName, IBinder iBinder) {
+				sleepService = ((SleepService.MyBinder) iBinder).getService();
+
+				if(sleepService.isRunning()) {
+					stopButton.setEnabled(true);
+					startButton.setEnabled(false);
+				} else {
+					startButton.setEnabled(true);
+					stopButton.setEnabled(false);
+				}
+			}
+
+			@Override
+			public void onServiceDisconnected(ComponentName componentName) {
+
+			}
+		}
+		MyServiceConnection myServiceConnection = new MyServiceConnection();
+		startService(sleepServiceIntent);
+		bindService(sleepServiceIntent, myServiceConnection, BIND_AUTO_CREATE);
+
+		startButton.setOnClickListener(v -> {
 			startButton.setEnabled(false);
 			stopButton.setEnabled(true);
-
-			Thread savingThread = new Thread(() -> {
-				File sleepFile = makeSleepFile();
-				if(sleepFile == null) {
-					startButton.post(() -> storageAlert.show());
-					return;
-				}
-
-				System.out.println("Made a sleep file " + sleepFile);
-
-				while(recordingSleep) {
-					try {
-						Thread.sleep(60 * 100);
-					} catch (InterruptedException e) {
-						e.printStackTrace();
-					}
-
-					System.out.println("Writing to file...");
-
-					ArrayList<DataPoint> dataPointsToWrite = dataPoints;
-					dataPoints = new ArrayList<>();
-
-					try {
-						writeSleepFile(sleepFile, dataPointsToWrite);
-					} catch (IOException e) {
-						// TODO: handle this error or maybe just hope it never happens
-						e.printStackTrace();
-					}
-				}
-
-				System.out.println("Done writing");
-			}, "Saving-Thread");
-			savingThread.start();
+			sleepService.start();
 		});
+		startButton.setEnabled(false);
 
-		stopButton = findViewById(R.id.stopButton);
 		stopButton.setOnClickListener(v -> {
-			recordingSleep = false;
-			sensorManager.unregisterListener(MainActivity.this);
-			if(wakeLock.isHeld())
-				wakeLock.release();
-
 			stopButton.setEnabled(false);
 			startButton.setEnabled(true);
+			sleepService.stop();
 		});
 		stopButton.setEnabled(false);
-	}
-
-	private File makeSleepFile() {
-		File sdcard = Environment.getExternalStorageDirectory();
-		File sleepFolder = new File(sdcard, "/sleepapp");
-		File sleepFile = new File(sleepFolder, simpleDateFormat.format(new Date()) + ".slp");
-		sleepFolder.mkdirs();
-		try {
-			if(!sleepFile.createNewFile())
-				return null;
-		} catch (IOException e) {
-			return null;
-		}
-		return sleepFile;
 	}
 
 	public static File[] getSleepFiles() {
@@ -157,27 +117,5 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 		dataPointInputStream.close();
 		fileInputStream.close();
 		return dataPoints;
-	}
-
-	private void writeSleepFile(File sleepFile, ArrayList<DataPoint> dataPoints) throws IOException {
-		FileOutputStream fileOutputStream = new FileOutputStream(sleepFile, true);
-		DataPointOutputStream dataPointOutputStream = new DataPointOutputStream(fileOutputStream);
-		for(DataPoint dataPoint : dataPoints)
-			dataPointOutputStream.writeDataPoint(dataPoint);
-		dataPointOutputStream.close();
-		fileOutputStream.close();
-	}
-
-	@Override
-	public void onSensorChanged(SensorEvent event) {
-		if (event.sensor.getType() == Sensor.TYPE_ACCELEROMETER) {
-			float[] values = event.values;
-			dataPoints.add(new DataPoint(System.currentTimeMillis() + (event.timestamp - SystemClock.elapsedRealtimeNanos()) / 1000000, values[0], values[1], values[2]));
-		}
-	}
-
-	@Override
-	public void onAccuracyChanged(Sensor sensor, int accuracy) {
-
 	}
 }
