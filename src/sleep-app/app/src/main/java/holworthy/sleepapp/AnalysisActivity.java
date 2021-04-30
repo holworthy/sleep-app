@@ -16,7 +16,6 @@ public class AnalysisActivity extends AppCompatActivity {
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		setContentView(R.layout.activity_analysis);
 
 		ActionBar actionBar = getSupportActionBar();
 		actionBar.setDisplayHomeAsUpEnabled(true);
@@ -42,16 +41,15 @@ public class AnalysisActivity extends AppCompatActivity {
 
 		dataPoints = fixData(dataPoints);
 
-		int seconds = dataPoints.size() / 20;
-		for(int chunk = 0; chunk < seconds; chunk++) {
-			float sum = 0;
-			for(int i = chunk * 20; i < (chunk + 1) * 20; i++)
-				sum += dataPoints.get(i).getAcceleration();
-			System.out.println(chunk + ": " + sum);
-		}
+		DataPointGraph dataPointGraph = new DataPointGraph(this, dataPoints);
+		setContentView(dataPointGraph);
 
-		System.out.println(dataPoints.get(0));
-		System.out.println(dataPoints.get(dataPoints.size() - 1));
+//		int seconds = dataPoints.size() / 20;
+//		for(int chunk = 0; chunk < seconds; chunk++) {
+//			float sum = 0;
+//			for(int i = chunk * 20; i < (chunk + 1) * 20; i++)
+//				sum += dataPoints.get(i).getAcceleration();
+//		}
 	}
 
 	@Override
