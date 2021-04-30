@@ -1,14 +1,12 @@
 package holworthy.sleepapp;
 
+import android.os.Bundle;
+import android.view.MenuItem;
+import android.widget.TextView;
+
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
-
-import android.os.Bundle;
-import android.view.MenuItem;
-import android.view.ViewGroup;
-import android.widget.LinearLayout;
-import android.widget.TextView;
 
 import java.io.File;
 import java.io.IOException;
@@ -29,31 +27,34 @@ public class AnalysisActivity extends AppCompatActivity {
 		actionBar.setDisplayHomeAsUpEnabled(true);
 
 		File sleepFile = (File) getIntent().getSerializableExtra("file");
-		System.out.println(sleepFile);
 		if(sleepFile == null) {
 			finish();
 			return;
 		}
 
-		ArrayList<DataPoint> dataPoints;
-		try {
-			dataPoints = MainActivity.readSleepFile(sleepFile);
-		} catch (IOException e) {
-			e.printStackTrace();
-			// TODO: error and then exit
-			return;
-		}
+		DataPointGraph graph = findViewById(R.id.graph);
 
-		if(dataPoints.size() == 0)
-			return; // TODO: error
+		Thread thread = new Thread(() -> {
+			ArrayList<DataPoint> dataPoints;
+			try {
+				dataPoints = MainActivity.readSleepFile(sleepFile);
+			} catch (IOException e) {
+				// TODO: handle better
+				System.out.println("errors");
+				finish();
+				return;
+			}
 
-		dataPoints = fixData(dataPoints);
+			if(dataPoints.size() < 2) {
+				System.out.println("errors");
+				finish();
+				return; // TODO: error
+			}
 
-		LinearLayout graphWrapper = findViewById(R.id.GraphLayoutWrapper);
-		DataPointGraph graph = new DataPointGraph(this, dataPoints);
-		graph.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, 800, 1f));
-		graphWrapper.addView(graph);
-
+			final ArrayList<DataPoint> fixedDataPoints = fixData(dataPoints);
+			graph.post(() -> graph.setData(fixedDataPoints));
+		});
+		thread.start();
 
 		topLeftText = findViewById(R.id.TopLeftText);
 		topLeftText.setText("Fall asleep hour");
