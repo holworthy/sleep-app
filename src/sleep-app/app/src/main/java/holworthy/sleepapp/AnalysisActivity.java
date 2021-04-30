@@ -6,16 +6,22 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import android.os.Bundle;
 import android.view.MenuItem;
+import android.widget.TextView;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 
 public class AnalysisActivity extends AppCompatActivity {
+	private TextView topLeftText;
+	private TextView topRightText;
+	private TextView bottomLeftText;
+	private TextView bottomRightText;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
+		setContentView(R.layout.activity_analysis);
 
 		ActionBar actionBar = getSupportActionBar();
 		actionBar.setDisplayHomeAsUpEnabled(true);
@@ -41,8 +47,22 @@ public class AnalysisActivity extends AppCompatActivity {
 
 		dataPoints = fixData(dataPoints);
 
-		DataPointGraph dataPointGraph = new DataPointGraph(this, dataPoints);
-		setContentView(dataPointGraph);
+		// send data to graph
+
+		topLeftText = findViewById(R.id.TopLeftText);
+		topLeftText.setText("Fall asleep hour");
+
+		topRightText = findViewById(R.id.TopRightText);
+		topRightText.setText("Wake Up Hour");
+
+		bottomLeftText = findViewById(R.id.BottomLeftText);
+		bottomLeftText.setText("Total sleep time");
+
+		bottomRightText = findViewById(R.id.BottomRightText);
+		bottomRightText.setText("Another");
+
+//		DataPointGraph dataPointGraph = new DataPointGraph(this, dataPoints);
+//		setContentView(dataPointGraph);
 
 //		int seconds = dataPoints.size() / 20;
 //		for(int chunk = 0; chunk < seconds; chunk++) {
