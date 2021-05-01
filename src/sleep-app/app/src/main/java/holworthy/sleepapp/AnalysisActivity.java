@@ -10,7 +10,6 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
 
 public class AnalysisActivity extends AppCompatActivity {
 	private TextView topLeftText;
@@ -35,7 +34,7 @@ public class AnalysisActivity extends AppCompatActivity {
 		DataPointGraph graph = findViewById(R.id.graph);
 
 		Thread thread = new Thread(() -> {
-			ArrayList<DataPoint> dataPoints;
+			DataPoints dataPoints;
 			try {
 				dataPoints = MainActivity.readSleepFile(sleepFile);
 			} catch (IOException e) {
@@ -51,7 +50,7 @@ public class AnalysisActivity extends AppCompatActivity {
 				return; // TODO: error
 			}
 
-			final ArrayList<DataPoint> fixedDataPoints = DataPoint.fixData(dataPoints);
+			DataPoints fixedDataPoints = dataPoints.getFixed();
 			graph.post(() -> graph.setData(fixedDataPoints));
 		});
 		thread.start();

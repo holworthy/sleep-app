@@ -23,14 +23,13 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Date;
 
 public class SleepService extends Service implements Runnable, SensorEventListener {
 
 	private boolean isRecording = false;
 	private File sleepFile;
-	private ArrayList<DataPoint> dataPoints;
+	private DataPoints dataPoints;
 	private SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss");
 	private SharedPreferences sharedPreferences;
 
@@ -137,7 +136,7 @@ public class SleepService extends Service implements Runnable, SensorEventListen
 		return sleepFile;
 	}
 
-	private void writeSleepFile(File sleepFile, ArrayList<DataPoint> dataPoints) throws IOException {
+	private void writeSleepFile(File sleepFile, DataPoints dataPoints) throws IOException {
 		FileOutputStream fileOutputStream = new FileOutputStream(sleepFile, true);
 		DataPointOutputStream dataPointOutputStream = new DataPointOutputStream(fileOutputStream);
 		for(DataPoint dataPoint : dataPoints)
@@ -157,7 +156,7 @@ public class SleepService extends Service implements Runnable, SensorEventListen
 		SensorManager sensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
 
 		wakeLock.acquire();
-		dataPoints = new ArrayList<>();
+		dataPoints = new DataPoints();
 		sensorManager.registerListener(this, sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER), 50000);
 
 		while(isRecording) {
@@ -169,8 +168,8 @@ public class SleepService extends Service implements Runnable, SensorEventListen
 
 			System.out.println("FILE WRITE");
 
-			ArrayList<DataPoint> dataPointsToWrite = dataPoints;
-			dataPoints = new ArrayList<>();
+			DataPoints dataPointsToWrite = dataPoints;
+			dataPoints = new DataPoints();
 
 			try {
 				writeSleepFile(sleepFile, dataPointsToWrite);
