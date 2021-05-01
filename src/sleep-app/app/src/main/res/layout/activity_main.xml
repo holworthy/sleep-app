@@ -7,46 +7,33 @@
     tools:context=".MainActivity">
 
     <Button
-        android:id="@+id/startButton"
-        android:layout_width="wrap_content"
+        android:id="@+id/startStopButton"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="161dp"
-        android:layout_marginTop="16dp"
+        android:layout_marginTop="1dp"
         android:layout_marginEnd="162dp"
-        android:layout_marginBottom="16dp"
+        android:layout_marginBottom="319dp"
         android:backgroundTint="#4CAF50"
         android:text="Start"
-        app:layout_constraintBottom_toTopOf="@+id/stopButton"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/analyseButton" />
-
-    <Button
-        android:id="@+id/stopButton"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="162dp"
-        android:layout_marginTop="16dp"
-        android:layout_marginEnd="162dp"
-        android:layout_marginBottom="523dp"
-        android:backgroundTint="#F80707"
-        android:text="Stop"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/startButton" />
+        app:layout_constraintTop_toBottomOf="@+id/analyseButton" />
 
     <Button
         android:id="@+id/analyseButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="155dp"
-        android:layout_marginTop="16dp"
+        android:layout_marginTop="316dp"
         android:layout_marginEnd="156dp"
-        android:layout_marginBottom="16dp"
+        android:layout_marginBottom="1dp"
         android:text="ANALYSE"
-        app:layout_constraintBottom_toTopOf="@+id/startButton"
+        app:layout_constraintBottom_toTopOf="@+id/startStopButton"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
+
+
 </androidx.constraintlayout.widget.ConstraintLayout>
