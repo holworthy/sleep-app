@@ -2,12 +2,14 @@ package holworthy.sleepapp;
 
 import android.content.Context;
 import android.content.Intent;
+import android.content.res.ColorStateList;
 import android.graphics.Typeface;
 import android.os.Bundle;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
+import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.TextView;
@@ -79,6 +81,13 @@ public class SleepListViewActivity extends AppCompatActivity {
                 thread.start();
                 durationTextView.setText("Loading...");
                 infoLayout.addView(durationTextView);
+
+                Button removeButton = new Button(SleepListViewActivity.this);
+                removeButton.setText("Delete sleep");
+                removeButton.setBackgroundTintList(SleepListViewActivity.this.getResources().getColorStateList(R.color.buttonred));
+//                removeButton.setOnClickListener(v -> );
+
+                infoLayout.addView(removeButton);
 
                 return linearLayout;
             }
