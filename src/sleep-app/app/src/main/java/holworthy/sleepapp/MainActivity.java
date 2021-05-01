@@ -1,9 +1,12 @@
 package holworthy.sleepapp;
 
 import android.Manifest;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
 import android.content.ComponentName;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
@@ -21,9 +24,8 @@ import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity {
 
-	private Button startButton;
-	private Button stopButton;
 	private Button analyseButton;
+	private Button startStopButton;
 	private AlertDialog storageAlert;
 	private SleepService sleepService;
 
@@ -51,6 +53,12 @@ public class MainActivity extends AppCompatActivity {
 			}, 0);
 		}
 
+		if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+			NotificationChannel notificationChannel = new NotificationChannel("services", "Services", NotificationManager.IMPORTANCE_LOW);
+			NotificationManager notificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+			notificationManager.createNotificationChannel(notificationChannel);
+		}
+
 		analyseButton = findViewById(R.id.analyseButton);
 		analyseButton.setOnClickListener(v -> {
 			Intent intent = new Intent(MainActivity.this, SleepListViewActivity.class);
@@ -58,47 +66,34 @@ public class MainActivity extends AppCompatActivity {
 			overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left);
 		});
 
-		startButton = findViewById(R.id.startButton);
-		stopButton = findViewById(R.id.stopButton);
-
+		startStopButton = findViewById(R.id.startStopButton);
 
 		Intent sleepServiceIntent = new Intent(this, SleepService.class);
 		class MyServiceConnection implements ServiceConnection {
 			@Override
 			public void onServiceConnected(ComponentName componentName, IBinder iBinder) {
 				sleepService = ((SleepService.MyBinder) iBinder).getService();
-
-				if(sleepService.isRunning()) {
-					stopButton.setEnabled(true);
-					startButton.setEnabled(false);
-				} else {
-					startButton.setEnabled(true);
-					stopButton.setEnabled(false);
-				}
+				updateStartStopButton();
+				startStopButton.setEnabled(true);
 			}
 
 			@Override
 			public void onServiceDisconnected(ComponentName componentName) {
-
+				sleepService = null;
 			}
 		}
 		MyServiceConnection myServiceConnection = new MyServiceConnection();
 		startService(sleepServiceIntent);
-		bindService(sleepServiceIntent, myServiceConnection, BIND_AUTO_CREATE);
+		bindService(sleepServiceIntent, myServiceConnection, BIND_AUTO_CREATE | BIND_ABOVE_CLIENT);
 
-		startButton.setOnClickListener(v -> {
-			startButton.setEnabled(false);
-			stopButton.setEnabled(true);
-			sleepService.start();
+		startStopButton.setOnClickListener(v -> {
+			if(!sleepService.isRecording())
+				sleepService.startRecording();
+			else
+				sleepService.stopRecording();
+			updateStartStopButton();
 		});
-		startButton.setEnabled(false);
-
-		stopButton.setOnClickListener(v -> {
-			stopButton.setEnabled(false);
-			startButton.setEnabled(true);
-			sleepService.stop();
-		});
-		stopButton.setEnabled(false);
+		startStopButton.setEnabled(false);
 	}
 
 	public static File[] getSleepFiles() {
@@ -128,5 +123,15 @@ public class MainActivity extends AppCompatActivity {
 		long end = randomAccessFile.readLong();
 		randomAccessFile.close();
 		return end - start;
+	}
+
+	private void updateStartStopButton() {
+		if(sleepService.isRecording()) {
+			startStopButton.setText("Stop");
+			startStopButton.getBackground().setTint(Color.parseColor("#CC0000"));
+		} else {
+			startStopButton.setText("Start");
+			startStopButton.getBackground().setTint(Color.parseColor("#00CC00"));
+		}
 	}
 }

@@ -1,11 +1,10 @@
 package holworthy.sleepapp;
 
 import android.app.Notification;
-import android.app.NotificationChannel;
-import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
@@ -15,6 +14,7 @@ import android.os.Environment;
 import android.os.IBinder;
 import android.os.PowerManager;
 import android.os.SystemClock;
+import android.preference.PreferenceManager;
 
 import androidx.annotation.Nullable;
 import androidx.core.app.NotificationCompat;
@@ -28,21 +28,11 @@ import java.util.Date;
 
 public class SleepService extends Service implements Runnable, SensorEventListener {
 
-	private boolean isRunning = false;
+	private boolean isRecording = false;
+	private File sleepFile;
 	private ArrayList<DataPoint> dataPoints;
 	private SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss");
-
-	@Override
-	public void onCreate() {
-		super.onCreate();
-		System.out.println("GOT CREATED");
-	}
-
-	@Override
-	public void onDestroy() {
-		System.out.println("GOT DESTROYED");
-		super.onDestroy();
-	}
+	private SharedPreferences sharedPreferences;
 
 	public class MyBinder extends Binder {
 		public SleepService getService() {
@@ -50,41 +40,26 @@ public class SleepService extends Service implements Runnable, SensorEventListen
 		}
 	}
 
-	public boolean isRunning() {
-		return isRunning;
+	public boolean isRecording() {
+		return isRecording;
+	}
+
+	@Override
+	public void onCreate() {
+		super.onCreate();
+		System.out.println("GOT CREATED");
+		sharedPreferences = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
 	}
 
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
+		System.out.println("GOT STARTED " + intent);
+		if(intent == null) {
+			boolean supposedToBeRecording = sharedPreferences.getBoolean("isRecording", false);
+			if(!isRecording && supposedToBeRecording)
+				startRecording();
+		}
 		return START_STICKY;
-	}
-
-	public void start() {
-		if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-			NotificationChannel notificationChannel = new NotificationChannel("services", "Services", NotificationManager.IMPORTANCE_LOW);
-			NotificationManager notificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
-			notificationManager.createNotificationChannel(notificationChannel);
-		}
-
-		NotificationCompat.Builder builder = new NotificationCompat.Builder(this, "services");
-		builder.setContentTitle("Recording Sleep");
-		builder.setContentText("The app will run in the background");
-		builder.setSmallIcon(R.drawable.bed_icon);
-		builder.setContentIntent(PendingIntent.getActivity(this, 0, new Intent(this, MainActivity.class), 0));
-		Notification notification = builder.build();
-
-		startForeground(123, notification);
-
-		System.out.println("GOT STARTED");
-		if(!isRunning) {
-			Thread thread = new Thread(this);
-			thread.start();
-		}
-	}
-
-	public void stop() {
-		System.out.println("GOT STOPPED");
-		isRunning = false;
 	}
 
 	@Nullable
@@ -95,9 +70,57 @@ public class SleepService extends Service implements Runnable, SensorEventListen
 	}
 
 	@Override
+	public void onDestroy() {
+		System.out.println("GOT DESTROYED");
+		super.onDestroy();
+	}
+
+	@Override
 	public boolean onUnbind(Intent intent) {
 		System.out.println("GOT UNBIND: " + intent);
-		return super.onUnbind(intent);
+		if(!isRecording)
+			stopSelf();
+		return true;
+	}
+
+	@Override
+	public void onRebind(Intent intent) {
+		System.out.println("GOT REBIND");
+		super.onRebind(intent);
+	}
+
+	public void startRecording() {
+		System.out.println("GOT STARTED");
+		if(!isRecording) {
+			System.out.println("ACTUALLY STARTED");
+
+			NotificationCompat.Builder builder = new NotificationCompat.Builder(this, "services");
+			builder.setContentTitle("Recording Sleep");
+			builder.setContentText("The app will run in the background");
+			builder.setSmallIcon(R.drawable.bed_icon);
+			builder.setContentIntent(PendingIntent.getActivity(this, 0, new Intent(this, MainActivity.class), 0));
+			Notification notification = builder.build();
+			startForeground(123, notification);
+
+			isRecording = true;
+			sleepFile = makeSleepFile();
+
+			SharedPreferences.Editor editor = sharedPreferences.edit();
+			editor.putBoolean("isRecording", true);
+			editor.apply();
+
+			Thread thread = new Thread(this, "Saving-Thread");
+			thread.start();
+		}
+	}
+
+	public void stopRecording() {
+		System.out.println("GOT STOPPED");
+		isRecording = false;
+
+		SharedPreferences.Editor editor = sharedPreferences.edit();
+		editor.putBoolean("isRecording", false);
+		editor.apply();
 	}
 
 	private File makeSleepFile() {
@@ -125,8 +148,9 @@ public class SleepService extends Service implements Runnable, SensorEventListen
 
 	@Override
 	public void run() {
-		isRunning = true;
 		System.out.println("RUNNING IN THREAD");
+
+		File sleepFile = this.sleepFile;
 
 		PowerManager powerManager = (PowerManager) getSystemService(POWER_SERVICE);
 		PowerManager.WakeLock wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "sleepapp:lock");
@@ -136,21 +160,14 @@ public class SleepService extends Service implements Runnable, SensorEventListen
 		dataPoints = new ArrayList<>();
 		sensorManager.registerListener(this, sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER), 50000);
 
-		File sleepFile = makeSleepFile();
-		if(sleepFile == null) {
-			// TODO: handle this error
-			return;
-		}
-
-		System.out.println("Made a sleep file " + sleepFile);
-		while(isRunning) {
+		while(isRecording) {
 			try {
-				Thread.sleep(60 * 100);
+				Thread.sleep(30 * 1000);
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
 
-			System.out.println("Writing to file...");
+			System.out.println("FILE WRITE");
 
 			ArrayList<DataPoint> dataPointsToWrite = dataPoints;
 			dataPoints = new ArrayList<>();
@@ -162,7 +179,7 @@ public class SleepService extends Service implements Runnable, SensorEventListen
 				e.printStackTrace();
 			}
 		}
-		System.out.println("Done writing");
+		System.out.println("THREAD DONE");
 
 		sensorManager.unregisterListener(this);
 		wakeLock.release();

@@ -51,7 +51,7 @@ public class AnalysisActivity extends AppCompatActivity {
 				return; // TODO: error
 			}
 
-			final ArrayList<DataPoint> fixedDataPoints = fixData(dataPoints);
+			final ArrayList<DataPoint> fixedDataPoints = DataPoint.fixData(dataPoints);
 			graph.post(() -> graph.setData(fixedDataPoints));
 		});
 		thread.start();
@@ -89,17 +89,5 @@ public class AnalysisActivity extends AppCompatActivity {
 	public void finish() {
 		super.finish();
 		overridePendingTransition(R.anim.slide_in_left, R.anim.slide_out_right);
-	}
-
-	private ArrayList<DataPoint> fixData(ArrayList<DataPoint> brokenDataPoints) {
-		ArrayList<DataPoint> fixedDataPoints = new ArrayList<>();
-		DataPoint last = brokenDataPoints.get(brokenDataPoints.size() - 1);
-		int current = 0;
-		for(long timestamp = brokenDataPoints.get(0).getTimestamp(); timestamp <= last.getTimestamp(); timestamp += 50) {
-			while(brokenDataPoints.get(current + 1).getTimestamp() < timestamp)
-				current++;
-			fixedDataPoints.add(DataPoint.lerp(brokenDataPoints.get(current), brokenDataPoints.get(current + 1), timestamp));
-		}
-		return fixedDataPoints;
 	}
 }
