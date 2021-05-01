@@ -1,6 +1,8 @@
 package holworthy.sleepapp;
 
+import android.app.AlertDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.res.ColorStateList;
 import android.graphics.Typeface;
@@ -85,7 +87,31 @@ public class SleepListViewActivity extends AppCompatActivity {
                 Button removeButton = new Button(SleepListViewActivity.this);
                 removeButton.setText("Delete sleep");
                 removeButton.setBackgroundTintList(SleepListViewActivity.this.getResources().getColorStateList(R.color.buttonred));
-//                removeButton.setOnClickListener(v -> );
+                removeButton.setOnClickListener(v -> {
+                    AlertDialog.Builder builder = new AlertDialog.Builder(SleepListViewActivity.this);
+                    builder.setCancelable(true);
+                    builder.setTitle("Delete This Sleep?");
+                    builder.setMessage("Are you sure you want to delete, THIS CANNOT BE UNDONE.");
+                    builder.setPositiveButton("Confirm",
+                            new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialog, int which) {
+                                    sleepFiles.remove(position);
+                                    MyArrayAdapter.this.notifyDataSetChanged();
+                                }
+                            });
+                    builder.setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                        }
+                    });
+
+                    AlertDialog dialog = builder.create();
+                    dialog.show();
+
+
+                });
+                removeButton.setFocusable(false);
 
                 infoLayout.addView(removeButton);
 

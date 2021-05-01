@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <selector xmlns:android="http://schemas.android.com/apk/res/android">
     <item
-        android:color="#ff0000"/>
+        android:color="#ff0000"
+        android:state_focused="false"
+        android:focusableInTouchMode="false"/>
 <!--        android:state_pressed="true"-->
 <!--        android:state_focused="true"-->
 <!--        android:state_selected="true"-->
