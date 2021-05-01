@@ -1,6 +1,7 @@
 package holworthy.sleepapp;
 
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 
 public class DataPoint {
@@ -15,28 +16,6 @@ public class DataPoint {
 		this.xAcceleration = xAcceleration;
 		this.yAcceleration = yAcceleration;
 		this.zAcceleration = zAcceleration;
-	}
-
-	public static DataPoint lerp(DataPoint a, DataPoint b, long timestamp) {
-		if(a.timestamp > timestamp || b.timestamp < timestamp)
-			return null;
-		float t = (timestamp - a.timestamp) / (float) (b.timestamp - a.timestamp);
-		return new DataPoint(
-			timestamp,
-			a.xAcceleration + (b.xAcceleration - a.xAcceleration) * t,
-			a.yAcceleration + (b.yAcceleration - a.yAcceleration) * t,
-			a.zAcceleration + (b.zAcceleration - a.zAcceleration) * t
-		);
-	}
-
-	@Override
-	public String toString() {
-		return "DataPoint{" +
-				"timestamp=" + simpleDateFormat.format(new Date(timestamp)) +
-				", xAcceleration=" + xAcceleration +
-				", yAcceleration=" + yAcceleration +
-				", zAcceleration=" + zAcceleration +
-				'}';
 	}
 
 	public long getTimestamp() {
@@ -57,5 +36,39 @@ public class DataPoint {
 
 	public float getAcceleration() {
 		return (float) Math.sqrt(getXAcceleration() * getXAcceleration() + getYAcceleration() * getYAcceleration() + getZAcceleration() * getZAcceleration());
+	}
+
+	@Override
+	public String toString() {
+		return "DataPoint{" +
+			"timestamp=" + simpleDateFormat.format(new Date(timestamp)) +
+			", xAcceleration=" + xAcceleration +
+			", yAcceleration=" + yAcceleration +
+			", zAcceleration=" + zAcceleration +
+			'}';
+	}
+
+	public static DataPoint lerp(DataPoint a, DataPoint b, long timestamp) {
+		if(a.timestamp > timestamp || b.timestamp < timestamp)
+			return null;
+		float t = (timestamp - a.timestamp) / (float) (b.timestamp - a.timestamp);
+		return new DataPoint(
+			timestamp,
+			a.xAcceleration + (b.xAcceleration - a.xAcceleration) * t,
+			a.yAcceleration + (b.yAcceleration - a.yAcceleration) * t,
+			a.zAcceleration + (b.zAcceleration - a.zAcceleration) * t
+		);
+	}
+
+	public static ArrayList<DataPoint> fixData(ArrayList<DataPoint> brokenDataPoints) {
+		ArrayList<DataPoint> fixedDataPoints = new ArrayList<>();
+		DataPoint last = brokenDataPoints.get(brokenDataPoints.size() - 1);
+		int current = 0;
+		for(long timestamp = brokenDataPoints.get(0).getTimestamp(); timestamp <= last.getTimestamp(); timestamp += 50) {
+			while(brokenDataPoints.get(current + 1).getTimestamp() < timestamp)
+				current++;
+			fixedDataPoints.add(DataPoint.lerp(brokenDataPoints.get(current), brokenDataPoints.get(current + 1), timestamp));
+		}
+		return fixedDataPoints;
 	}
 }
