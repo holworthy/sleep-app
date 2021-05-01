@@ -1,6 +1,8 @@
 package holworthy.sleepapp;
 
 import android.Manifest;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
 import android.content.ComponentName;
 import android.content.Intent;
 import android.content.ServiceConnection;
@@ -12,7 +14,6 @@ import android.widget.Button;
 
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.content.ContextCompat;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -52,6 +53,12 @@ public class MainActivity extends AppCompatActivity {
 			}, 0);
 		}
 
+		if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+			NotificationChannel notificationChannel = new NotificationChannel("services", "Services", NotificationManager.IMPORTANCE_LOW);
+			NotificationManager notificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+			notificationManager.createNotificationChannel(notificationChannel);
+		}
+
 		analyseButton = findViewById(R.id.analyseButton);
 		analyseButton.setOnClickListener(v -> {
 			Intent intent = new Intent(MainActivity.this, SleepListViewActivity.class);
@@ -62,14 +69,13 @@ public class MainActivity extends AppCompatActivity {
 		startButton = findViewById(R.id.startButton);
 		stopButton = findViewById(R.id.stopButton);
 
-
 		Intent sleepServiceIntent = new Intent(this, SleepService.class);
 		class MyServiceConnection implements ServiceConnection {
 			@Override
 			public void onServiceConnected(ComponentName componentName, IBinder iBinder) {
 				sleepService = ((SleepService.MyBinder) iBinder).getService();
 
-				if(sleepService.isRunning()) {
+				if(sleepService.isRecording()) {
 					stopButton.setEnabled(true);
 					startButton.setEnabled(false);
 				} else {
@@ -90,14 +96,14 @@ public class MainActivity extends AppCompatActivity {
 		startButton.setOnClickListener(v -> {
 			startButton.setEnabled(false);
 			stopButton.setEnabled(true);
-			sleepService.start();
+			sleepService.startRecording();
 		});
 		startButton.setEnabled(false);
 
 		stopButton.setOnClickListener(v -> {
 			stopButton.setEnabled(false);
 			startButton.setEnabled(true);
-			sleepService.stop();
+			sleepService.stopRecording();
 		});
 		stopButton.setEnabled(false);
 	}
