@@ -59,16 +59,4 @@ public class DataPoint {
 			a.zAcceleration + (b.zAcceleration - a.zAcceleration) * t
 		);
 	}
-
-	public static ArrayList<DataPoint> fixData(ArrayList<DataPoint> brokenDataPoints) {
-		ArrayList<DataPoint> fixedDataPoints = new ArrayList<>();
-		DataPoint last = brokenDataPoints.get(brokenDataPoints.size() - 1);
-		int current = 0;
-		for(long timestamp = brokenDataPoints.get(0).getTimestamp(); timestamp <= last.getTimestamp(); timestamp += 50) {
-			while(brokenDataPoints.get(current + 1).getTimestamp() < timestamp)
-				current++;
-			fixedDataPoints.add(DataPoint.lerp(brokenDataPoints.get(current), brokenDataPoints.get(current + 1), timestamp));
-		}
-		return fixedDataPoints;
-	}
 }

@@ -20,7 +20,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.RandomAccessFile;
-import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -104,10 +103,10 @@ public class MainActivity extends AppCompatActivity {
 		return sleepFolder.listFiles();
 	}
 
-	public static ArrayList<DataPoint> readSleepFile(File sleepFile) throws IOException {
+	public static DataPoints readSleepFile(File sleepFile) throws IOException {
 		FileInputStream fileInputStream = new FileInputStream(sleepFile);
 		DataPointInputStream dataPointInputStream = new DataPointInputStream(fileInputStream);
-		ArrayList<DataPoint> dataPoints = new ArrayList<>();
+		DataPoints dataPoints = new DataPoints();
 		while(dataPointInputStream.available() > 0)
 			dataPoints.add(dataPointInputStream.readDataPoint());
 		dataPointInputStream.close();
