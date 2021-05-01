@@ -96,8 +96,10 @@ public class SleepListViewActivity extends AppCompatActivity {
                             new DialogInterface.OnClickListener() {
                                 @Override
                                 public void onClick(DialogInterface dialog, int which) {
-                                    sleepFiles.remove(position);
-                                    MyArrayAdapter.this.notifyDataSetChanged();
+                                    if (sleepFiles.get(position).getFile().delete()){
+                                        sleepFiles.remove(position);
+                                        MyArrayAdapter.this.notifyDataSetChanged();
+                                    }
                                 }
                             });
                     builder.setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {
