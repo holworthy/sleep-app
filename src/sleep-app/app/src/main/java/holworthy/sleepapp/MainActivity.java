@@ -12,6 +12,7 @@ import android.widget.Button;
 
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.ContextCompat;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -84,7 +85,7 @@ public class MainActivity extends AppCompatActivity {
 		}
 		MyServiceConnection myServiceConnection = new MyServiceConnection();
 		startService(sleepServiceIntent);
-		bindService(sleepServiceIntent, myServiceConnection, BIND_AUTO_CREATE);
+		bindService(sleepServiceIntent, myServiceConnection, BIND_AUTO_CREATE | BIND_ABOVE_CLIENT);
 
 		startButton.setOnClickListener(v -> {
 			startButton.setEnabled(false);

@@ -56,7 +56,14 @@ public class SleepService extends Service implements Runnable, SensorEventListen
 
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
+		System.out.println("GOT STARTED " + intent);
 		return START_STICKY;
+	}
+
+	@Override
+	public void onRebind(Intent intent) {
+		System.out.println("GOT REBIND");
+		super.onRebind(intent);
 	}
 
 	public void start() {
@@ -77,7 +84,7 @@ public class SleepService extends Service implements Runnable, SensorEventListen
 
 		System.out.println("GOT STARTED");
 		if(!isRunning) {
-			Thread thread = new Thread(this);
+			Thread thread = new Thread(this, "Saving-Thread");
 			thread.start();
 		}
 	}
@@ -97,7 +104,7 @@ public class SleepService extends Service implements Runnable, SensorEventListen
 	@Override
 	public boolean onUnbind(Intent intent) {
 		System.out.println("GOT UNBIND: " + intent);
-		return super.onUnbind(intent);
+		return true;
 	}
 
 	private File makeSleepFile() {
@@ -145,7 +152,7 @@ public class SleepService extends Service implements Runnable, SensorEventListen
 		System.out.println("Made a sleep file " + sleepFile);
 		while(isRunning) {
 			try {
-				Thread.sleep(60 * 100);
+				Thread.sleep(30 * 1000);
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
