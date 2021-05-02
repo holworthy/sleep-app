@@ -21,6 +21,7 @@ import androidx.core.app.NotificationCompat;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -46,37 +47,36 @@ public class SleepService extends Service implements Runnable, SensorEventListen
 	@Override
 	public void onCreate() {
 		super.onCreate();
-		System.out.println("GOT CREATED");
+		log("service created");
 		sharedPreferences = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
 	}
 
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
-		System.out.println("GOT STARTED " + intent);
-		if(intent == null) {
-			boolean supposedToBeRecording = sharedPreferences.getBoolean("isRecording", false);
-			if(!isRecording && supposedToBeRecording)
-				startRecording();
-		}
+		log("service started" + intent + ", " + flags);
+		boolean supposedToBeRecording = sharedPreferences.getBoolean("isRecording", false);
+		log("service supposed to be running? " + supposedToBeRecording + ", isRecording? " + isRecording);
+		if(!isRecording && supposedToBeRecording)
+			startRecording();
 		return START_STICKY;
 	}
 
 	@Nullable
 	@Override
 	public IBinder onBind(Intent intent) {
-		System.out.println("GOT BIND: " + intent);
+		log("service bind" + intent);
 		return new MyBinder();
 	}
 
 	@Override
 	public void onDestroy() {
-		System.out.println("GOT DESTROYED");
+		log("service destroyed");
 		super.onDestroy();
 	}
 
 	@Override
 	public boolean onUnbind(Intent intent) {
-		System.out.println("GOT UNBIND: " + intent);
+		log("service unbind" + intent);
 		if(!isRecording)
 			stopSelf();
 		return true;
@@ -84,12 +84,12 @@ public class SleepService extends Service implements Runnable, SensorEventListen
 
 	@Override
 	public void onRebind(Intent intent) {
-		System.out.println("GOT REBIND");
+		log("service rebind" + intent);
 		super.onRebind(intent);
 	}
 
 	public void startRecording() {
-		System.out.println("GOT STARTED");
+		log("service start recording");
 		if(!isRecording) {
 			System.out.println("ACTUALLY STARTED");
 
@@ -114,7 +114,7 @@ public class SleepService extends Service implements Runnable, SensorEventListen
 	}
 
 	public void stopRecording() {
-		System.out.println("GOT STOPPED");
+		log("service stop recording");
 		isRecording = false;
 
 		SharedPreferences.Editor editor = sharedPreferences.edit();
@@ -136,18 +136,23 @@ public class SleepService extends Service implements Runnable, SensorEventListen
 		return sleepFile;
 	}
 
-	private void writeSleepFile(File sleepFile, DataPoints dataPoints) throws IOException {
-		FileOutputStream fileOutputStream = new FileOutputStream(sleepFile, true);
-		DataPointOutputStream dataPointOutputStream = new DataPointOutputStream(fileOutputStream);
-		for(DataPoint dataPoint : dataPoints)
-			dataPointOutputStream.writeDataPoint(dataPoint);
-		dataPointOutputStream.close();
-		fileOutputStream.close();
+	private void writeSleepFile(File sleepFile, DataPoints dataPoints) {
+		try {
+			FileOutputStream fileOutputStream = new FileOutputStream(sleepFile, true);
+			DataPointOutputStream dataPointOutputStream = new DataPointOutputStream(fileOutputStream);
+			for(DataPoint dataPoint : dataPoints)
+				dataPointOutputStream.writeDataPoint(dataPoint);
+			dataPointOutputStream.close();
+			fileOutputStream.close();
+		} catch (Exception e) {
+			System.out.println("didnt save");
+			e.printStackTrace();
+		}
 	}
 
 	@Override
 	public void run() {
-		System.out.println("RUNNING IN THREAD");
+		log("service save thread running");
 
 		File sleepFile = this.sleepFile;
 
@@ -166,19 +171,14 @@ public class SleepService extends Service implements Runnable, SensorEventListen
 				e.printStackTrace();
 			}
 
-			System.out.println("FILE WRITE");
+			log("service thread saving");
 
 			DataPoints dataPointsToWrite = dataPoints;
 			dataPoints = new DataPoints();
 
-			try {
-				writeSleepFile(sleepFile, dataPointsToWrite);
-			} catch (IOException e) {
-				// TODO: handle this error or maybe just hope it never happens
-				e.printStackTrace();
-			}
+			writeSleepFile(sleepFile, dataPointsToWrite);
 		}
-		System.out.println("THREAD DONE");
+		log("service thread done");
 
 		sensorManager.unregisterListener(this);
 		wakeLock.release();
@@ -201,5 +201,23 @@ public class SleepService extends Service implements Runnable, SensorEventListen
 	@Override
 	public void onAccuracyChanged(Sensor sensor, int accuracy) {
 
+	}
+
+	@Override
+	public void onLowMemory() {
+		log("low mem");
+		super.onLowMemory();
+	}
+
+	private void log(String message) {
+		String logMessage = simpleDateFormat.format(System.currentTimeMillis()) + ": " + message + "\n";
+		System.out.print(logMessage);
+		try {
+			FileWriter fileWriter = new FileWriter("/sdcard/sleeplog.txt", true);
+			fileWriter.write(logMessage);
+			fileWriter.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 }

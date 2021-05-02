@@ -2,9 +2,7 @@ package holworthy.sleepapp;
 
 import android.app.AlertDialog;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.res.ColorStateList;
 import android.graphics.Typeface;
 import android.os.Bundle;
 import android.view.MenuItem;
@@ -14,6 +12,7 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.ListView;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -63,8 +62,7 @@ public class SleepListViewActivity extends AppCompatActivity {
                 titleTextView.setTypeface(Typeface.DEFAULT_BOLD);
                 linearLayout.addView(titleTextView);
 
-                LinearLayout infoLayout = new LinearLayout(SleepListViewActivity.this);
-                infoLayout.setOrientation(LinearLayout.HORIZONTAL);
+                RelativeLayout infoLayout = new RelativeLayout(SleepListViewActivity.this);
                 linearLayout.addView(infoLayout);
 
                 TextView durationTextView = new TextView(SleepListViewActivity.this);
@@ -92,29 +90,20 @@ public class SleepListViewActivity extends AppCompatActivity {
                     builder.setCancelable(true);
                     builder.setTitle("Delete This Sleep?");
                     builder.setMessage("Are you sure you want to delete, THIS CANNOT BE UNDONE.");
-                    builder.setPositiveButton("Confirm",
-                            new DialogInterface.OnClickListener() {
-                                @Override
-                                public void onClick(DialogInterface dialog, int which) {
-                                    if (sleepFiles.get(position).getFile().delete()){
-                                        sleepFiles.remove(position);
-                                        MyArrayAdapter.this.notifyDataSetChanged();
-                                    }
-                                }
-                            });
-                    builder.setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialog, int which) {
+                    builder.setPositiveButton("Confirm", (dialog, which) -> {
+                        if(sleepFiles.get(position).getFile().delete()) {
+                            sleepFiles.remove(position);
+                            MyArrayAdapter.this.notifyDataSetChanged();
                         }
                     });
-
+                    builder.setNegativeButton(android.R.string.cancel, (dialog, which) -> {});
                     AlertDialog dialog = builder.create();
                     dialog.show();
-
-
                 });
                 removeButton.setFocusable(false);
-
+                RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+                params.addRule(RelativeLayout.ALIGN_PARENT_END);
+                removeButton.setLayoutParams(params);
                 infoLayout.addView(removeButton);
 
                 return linearLayout;
