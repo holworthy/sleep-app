@@ -10,6 +10,8 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
 
 public class AnalysisActivity extends AppCompatActivity {
 	private TextView topLeftText;
@@ -51,7 +53,31 @@ public class AnalysisActivity extends AppCompatActivity {
 			}
 
 			DataPoints fixedDataPoints = dataPoints.getFixed();
-			graph.post(() -> graph.setData(fixedDataPoints));
+			float mean = fixedDataPoints.getAccelerationMean();
+			float standardDeviation = fixedDataPoints.getAccelerationStandardDeviation();
+
+			DataPoints insignificant = new DataPoints();
+			for(DataPoint dataPoint : fixedDataPoints)
+				if(dataPoint.getAcceleration() > mean - standardDeviation && dataPoint.getAcceleration() < mean + standardDeviation)
+					insignificant.add(dataPoint);
+			float gravityMean = insignificant.getAccelerationMean();
+
+			System.out.println(mean + ", " + gravityMean);
+
+			float[] gravityFix = new float[fixedDataPoints.size()];
+			for(int i = 0; i < fixedDataPoints.size(); i++)
+				gravityFix[i] = fixedDataPoints.get(i).getAcceleration() < mean ? 3 * gravityMean - 2 * fixedDataPoints.get(i).getAcceleration() : fixedDataPoints.get(i).getAcceleration();
+
+			float[] minutes = new float[gravityFix.length / (20 * 60)];
+			for(int chunk = 0; chunk < gravityFix.length / (20 * 60); chunk++) {
+				minutes[chunk] = 0;
+				for(int i = chunk * 60 * 20; i < (chunk + 1) * 20 * 60; i++)
+					minutes[chunk] += gravityFix[i];
+			}
+
+			System.out.println(Arrays.toString(minutes));
+
+			graph.post(() -> graph.setData(minutes));
 		});
 		thread.start();
 
