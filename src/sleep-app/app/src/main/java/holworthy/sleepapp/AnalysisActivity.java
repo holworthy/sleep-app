@@ -60,19 +60,26 @@ public class AnalysisActivity extends AppCompatActivity {
 			for(DataPoint dataPoint : fixedDataPoints)
 				if(dataPoint.getAcceleration() > mean - standardDeviation && dataPoint.getAcceleration() < mean + standardDeviation)
 					insignificant.add(dataPoint);
+				else
+					insignificant.add(new DataPoint(dataPoint.getTimestamp(), 0, 0, 0));
 			float gravityMean = insignificant.getAccelerationMean();
 
 			System.out.println(mean + ", " + gravityMean);
+
+			float[] gravityFix2 = new float[fixedDataPoints.size()];
+			for (int i = 0; i < fixedDataPoints.size(); i++){
+				gravityFix2[i] = fixedDataPoints.get(i).getAcceleration() - insignificant.get(i).getAcceleration();
+			}
 
 			float[] gravityFix = new float[fixedDataPoints.size()];
 			for(int i = 0; i < fixedDataPoints.size(); i++)
 				gravityFix[i] = fixedDataPoints.get(i).getAcceleration() < mean ? 3 * gravityMean - 2 * fixedDataPoints.get(i).getAcceleration() : fixedDataPoints.get(i).getAcceleration();
 
-			float[] minutes = new float[gravityFix.length / (20 * 60)];
-			for(int chunk = 0; chunk < gravityFix.length / (20 * 60); chunk++) {
+			float[] minutes = new float[gravityFix2.length / (20 * 60)];
+			for(int chunk = 0; chunk < gravityFix2.length / (20 * 60); chunk++) {
 				minutes[chunk] = 0;
 				for(int i = chunk * 60 * 20; i < (chunk + 1) * 20 * 60; i++)
-					minutes[chunk] += gravityFix[i];
+					minutes[chunk] += gravityFix2[i];
 			}
 
 			System.out.println(Arrays.toString(minutes));
