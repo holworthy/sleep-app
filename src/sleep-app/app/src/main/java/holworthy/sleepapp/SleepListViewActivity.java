@@ -24,20 +24,17 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class SleepListViewActivity extends AppCompatActivity {
-    private ListView fileListView;
-    private ArrayList<SleepFile> sleepFiles;
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_sleep_list_view);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
-        sleepFiles = new ArrayList<>();
+        ArrayList<SleepFile> sleepFiles = new ArrayList<>();
         for (File file : MainActivity.getSleepFiles())
             sleepFiles.add(new SleepFile(file));
 
-        fileListView = findViewById(R.id.fileListView);
+        ListView fileListView = findViewById(R.id.fileListView);
         TextView emptyTextView = findViewById(R.id.empty);
         fileListView.setEmptyView(emptyTextView);
 
