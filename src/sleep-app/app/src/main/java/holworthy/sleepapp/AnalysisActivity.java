@@ -10,6 +10,8 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
 
 public class AnalysisActivity extends AppCompatActivity {
 	private TextView topLeftText;
@@ -32,28 +34,7 @@ public class AnalysisActivity extends AppCompatActivity {
 		}
 
 		DataPointGraph graph = findViewById(R.id.graph);
-
-		Thread thread = new Thread(() -> {
-			DataPoints dataPoints;
-			try {
-				dataPoints = MainActivity.readSleepFile(sleepFile);
-			} catch (IOException e) {
-				// TODO: handle better
-				System.out.println("errors");
-				finish();
-				return;
-			}
-
-			if(dataPoints.size() < 2) {
-				System.out.println("errors");
-				finish();
-				return; // TODO: error
-			}
-
-			DataPoints fixedDataPoints = dataPoints.getFixed();
-			graph.post(() -> graph.setData(fixedDataPoints));
-		});
-		thread.start();
+		graph.setData(sleepFile);
 
 		topLeftText = findViewById(R.id.TopLeftText);
 		topLeftText.setText("Fall asleep hour");

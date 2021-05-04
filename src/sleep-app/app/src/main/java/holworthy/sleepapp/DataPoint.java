@@ -38,6 +38,18 @@ public class DataPoint {
 		return (float) Math.sqrt(getXAcceleration() * getXAcceleration() + getYAcceleration() * getYAcceleration() + getZAcceleration() * getZAcceleration());
 	}
 
+	public void setXAcceleration(float xAcceleration) {
+		this.xAcceleration = xAcceleration;
+	}
+
+	public void setYAcceleration(float yAcceleration) {
+		this.yAcceleration = yAcceleration;
+	}
+
+	public void setZAcceleration(float zAcceleration) {
+		this.zAcceleration = zAcceleration;
+	}
+
 	@Override
 	public String toString() {
 		return "DataPoint{" +
