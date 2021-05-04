@@ -22,7 +22,7 @@ public class DataPointGraph extends View {
 		super(context, attributeSet);
 		data = new DataPoints();
 		bgPaint = new Paint();
-		bgPaint.setColor(Color.BLUE);
+		bgPaint.setColor(Color.DKGRAY);
 		fgPaint1 = new Paint();
 		fgPaint1.setColor(Color.RED);
 		fgPaint1.setStrokeWidth(2);

@@ -127,10 +127,10 @@ public class MainActivity extends AppCompatActivity {
 	private void updateStartStopButton() {
 		if(sleepService.isRecording()) {
 			startStopButton.setText("Stop");
-			startStopButton.getBackground().setTint(Color.parseColor("#CC0000"));
+			startStopButton.getBackground().setTint(Color.parseColor("#660000"));
 		} else {
 			startStopButton.setText("Start");
-			startStopButton.getBackground().setTint(Color.parseColor("#00CC00"));
+			startStopButton.getBackground().setTint(Color.parseColor("#006600"));
 		}
 	}
 }
