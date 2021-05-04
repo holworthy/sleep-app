@@ -1,5 +1,6 @@
 package holworthy.sleepapp;
 
+import android.annotation.SuppressLint;
 import android.app.Notification;
 import android.app.PendingIntent;
 import android.app.Service;
@@ -26,13 +27,20 @@ import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-public class SleepService extends Service implements Runnable, SensorEventListener {
+public class SleepService extends Service implements SensorEventListener {
+	public static final boolean USE_LOG = true;
+	public static final long SAVE_DELAY = 30000;
+
+	private PowerManager.WakeLock wakeLock;
+	private SensorManager sensorManager;
 
 	private boolean isRecording = false;
 	private File sleepFile;
 	private DataPoints dataPoints;
-	private SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss");
+	@SuppressLint("SimpleDateFormat")
+	private final SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss");
 	private SharedPreferences sharedPreferences;
+	private long lastSaveTimestamp = 0;
 
 	public class MyBinder extends Binder {
 		public SleepService getService() {
@@ -49,11 +57,15 @@ public class SleepService extends Service implements Runnable, SensorEventListen
 		super.onCreate();
 		log("service created");
 		sharedPreferences = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
+
+		PowerManager powerManager = (PowerManager) getSystemService(POWER_SERVICE);
+		wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "sleepapp:lock");
+		sensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
 	}
 
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
-		log("service started" + intent + ", " + flags);
+		log("service started " + intent + ", " + flags);
 		boolean supposedToBeRecording = sharedPreferences.getBoolean("isRecording", false);
 		log("service supposed to be running? " + supposedToBeRecording + ", isRecording? " + isRecording);
 		if(!isRecording && supposedToBeRecording)
@@ -64,7 +76,7 @@ public class SleepService extends Service implements Runnable, SensorEventListen
 	@Nullable
 	@Override
 	public IBinder onBind(Intent intent) {
-		log("service bind" + intent);
+		log("service bind " + intent);
 		return new MyBinder();
 	}
 
@@ -76,7 +88,7 @@ public class SleepService extends Service implements Runnable, SensorEventListen
 
 	@Override
 	public boolean onUnbind(Intent intent) {
-		log("service unbind" + intent);
+		log("service unbind " + intent);
 		if(!isRecording)
 			stopSelf();
 		return true;
@@ -84,22 +96,21 @@ public class SleepService extends Service implements Runnable, SensorEventListen
 
 	@Override
 	public void onRebind(Intent intent) {
-		log("service rebind" + intent);
+		log("service rebind " + intent);
 		super.onRebind(intent);
 	}
 
+	@SuppressLint("WakelockTimeout")
 	public void startRecording() {
 		log("service start recording");
 		if(!isRecording) {
-			System.out.println("ACTUALLY STARTED");
-
 			NotificationCompat.Builder builder = new NotificationCompat.Builder(this, "services");
-			builder.setContentTitle("Recording Sleep");
+			builder.setContentTitle("Recording Your Sleep");
 			builder.setContentText("The app will run in the background");
 			builder.setSmallIcon(R.drawable.bed_icon);
 			builder.setContentIntent(PendingIntent.getActivity(this, 0, new Intent(this, MainActivity.class), 0));
 			Notification notification = builder.build();
-			startForeground(123, notification);
+			startForeground(1, notification);
 
 			isRecording = true;
 			sleepFile = makeSleepFile();
@@ -108,18 +119,25 @@ public class SleepService extends Service implements Runnable, SensorEventListen
 			editor.putBoolean("isRecording", true);
 			editor.apply();
 
-			Thread thread = new Thread(this, "Saving-Thread");
-			thread.start();
+			wakeLock.acquire();
+			dataPoints = new DataPoints();
+			sensorManager.registerListener(this, sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER), 50000);
 		}
 	}
 
 	public void stopRecording() {
 		log("service stop recording");
-		isRecording = false;
+		if(isRecording) {
+			sensorManager.unregisterListener(this);
+			save();
+			stopForeground(true);
+			wakeLock.release();
 
-		SharedPreferences.Editor editor = sharedPreferences.edit();
-		editor.putBoolean("isRecording", false);
-		editor.apply();
+			isRecording = false;
+			SharedPreferences.Editor editor = sharedPreferences.edit();
+			editor.putBoolean("isRecording", false);
+			editor.apply();
+		}
 	}
 
 	private File makeSleepFile() {
@@ -145,44 +163,21 @@ public class SleepService extends Service implements Runnable, SensorEventListen
 			dataPointOutputStream.close();
 			fileOutputStream.close();
 		} catch (Exception e) {
-			System.out.println("didnt save");
+			log("couldn't save to file");
 			e.printStackTrace();
 		}
 	}
 
-	@Override
-	public void run() {
-		log("service save thread running");
-
-		File sleepFile = this.sleepFile;
-
-		PowerManager powerManager = (PowerManager) getSystemService(POWER_SERVICE);
-		PowerManager.WakeLock wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "sleepapp:lock");
-		SensorManager sensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
-
-		wakeLock.acquire();
-		dataPoints = new DataPoints();
-		sensorManager.registerListener(this, sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER), 50000);
-
-		while(isRecording) {
-			try {
-				Thread.sleep(30 * 1000);
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
-
-			log("service thread saving");
+	private void save() {
+		lastSaveTimestamp = System.currentTimeMillis();
+		Thread thread = new Thread(() -> {
+			log("saving to file");
 
 			DataPoints dataPointsToWrite = dataPoints;
 			dataPoints = new DataPoints();
-
 			writeSleepFile(sleepFile, dataPointsToWrite);
-		}
-		log("service thread done");
-
-		sensorManager.unregisterListener(this);
-		wakeLock.release();
-		stopForeground(true);
+		}, "Save-Thread");
+		thread.start();
 	}
 
 	@Override
@@ -195,6 +190,9 @@ public class SleepService extends Service implements Runnable, SensorEventListen
 				values[1],
 				values[2]
 			));
+
+			if(System.currentTimeMillis() - lastSaveTimestamp > SAVE_DELAY)
+				save();
 		}
 	}
 
@@ -210,14 +208,16 @@ public class SleepService extends Service implements Runnable, SensorEventListen
 	}
 
 	private void log(String message) {
-		String logMessage = simpleDateFormat.format(System.currentTimeMillis()) + ": " + message + "\n";
-		System.out.print(logMessage);
-		try {
-			FileWriter fileWriter = new FileWriter("/sdcard/sleeplog.txt", true);
-			fileWriter.write(logMessage);
-			fileWriter.close();
-		} catch (IOException e) {
-			e.printStackTrace();
+		if(USE_LOG) {
+			String logMessage = simpleDateFormat.format(System.currentTimeMillis()) + ": " + message + "\n";
+			System.out.print(logMessage);
+			try {
+				FileWriter fileWriter = new FileWriter("/sdcard/sleeplog.txt", true);
+				fileWriter.write(logMessage);
+				fileWriter.close();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
 		}
 	}
 }
