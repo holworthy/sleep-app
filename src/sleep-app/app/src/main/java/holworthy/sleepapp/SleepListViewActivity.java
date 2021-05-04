@@ -55,6 +55,7 @@ public class SleepListViewActivity extends AppCompatActivity {
                 linearLayout.setPadding(30, 30, 30, 30);
 
                 TextView titleTextView = new TextView(SleepListViewActivity.this);
+                titleTextView.setTextColor(0xffffffff);
                 titleTextView.setText(sleepFile.toString());
                 titleTextView.setTypeface(Typeface.DEFAULT_BOLD);
                 linearLayout.addView(titleTextView);
@@ -63,6 +64,7 @@ public class SleepListViewActivity extends AppCompatActivity {
                 linearLayout.addView(infoLayout);
 
                 TextView durationTextView = new TextView(SleepListViewActivity.this);
+                durationTextView.setTextColor(0xffffffff);
                 Thread thread = new Thread(() -> {
                     long duration;
                     try {
@@ -81,6 +83,7 @@ public class SleepListViewActivity extends AppCompatActivity {
 
                 Button removeButton = new Button(SleepListViewActivity.this);
                 removeButton.setText("Delete sleep");
+                removeButton.setTextColor(0xffffffff);
                 removeButton.setBackgroundTintList(SleepListViewActivity.this.getResources().getColorStateList(R.color.buttonred));
                 removeButton.setOnClickListener(v -> {
                     AlertDialog.Builder builder = new AlertDialog.Builder(SleepListViewActivity.this);
