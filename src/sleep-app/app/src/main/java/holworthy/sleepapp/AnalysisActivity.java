@@ -34,12 +34,7 @@ public class AnalysisActivity extends AppCompatActivity {
 		}
 
 		DataPointGraph graph = findViewById(R.id.graph);
-		try {
-			DataPoints dataPoints = MainActivity.readSleepFile(sleepFile);
-			graph.setData(dataPoints);
-		} catch (IOException e) {
-
-		}
+		graph.setData(sleepFile);
 
 		topLeftText = findViewById(R.id.TopLeftText);
 		topLeftText.setText("Fall asleep hour");
