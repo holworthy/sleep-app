@@ -9,17 +9,11 @@ import android.content.ServiceConnection;
 import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.Environment;
 import android.os.IBinder;
 import android.widget.Button;
 
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
-
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.RandomAccessFile;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -65,6 +59,7 @@ public class MainActivity extends AppCompatActivity {
 			overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left);
 		});
 
+		// TODO: make the sleep recording cancel if less than 15 minutes long
 		startStopButton = findViewById(R.id.startStopButton);
 
 		Intent sleepServiceIntent = new Intent(this, SleepService.class);
@@ -93,35 +88,6 @@ public class MainActivity extends AppCompatActivity {
 			updateStartStopButton();
 		});
 		startStopButton.setEnabled(false);
-	}
-
-	public static File[] getSleepFiles() {
-		File sdcard = Environment.getExternalStorageDirectory();
-		File sleepFolder = new File(sdcard, "/sleepapp");
-		if(!sleepFolder.exists())
-			return new File[]{};
-		return sleepFolder.listFiles();
-	}
-
-	public static DataPoints readSleepFile(File sleepFile) throws IOException {
-		FileInputStream fileInputStream = new FileInputStream(sleepFile);
-		DataPointInputStream dataPointInputStream = new DataPointInputStream(fileInputStream);
-		DataPoints dataPoints = new DataPoints();
-		while(dataPointInputStream.available() > 0)
-			dataPoints.add(dataPointInputStream.readDataPoint());
-		dataPointInputStream.close();
-		fileInputStream.close();
-		return dataPoints;
-	}
-
-	public static long getSleepFileLength(File sleepFile) throws IOException {
-		RandomAccessFile randomAccessFile = new RandomAccessFile(sleepFile, "r");
-		randomAccessFile.seek(0);
-		long start = randomAccessFile.readLong();
-		randomAccessFile.seek(randomAccessFile.length() - 20);
-		long end = randomAccessFile.readLong();
-		randomAccessFile.close();
-		return end - start;
 	}
 
 	private void updateStartStopButton() {

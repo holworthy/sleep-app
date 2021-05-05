@@ -2,6 +2,7 @@ package holworthy.sleepapp;
 
 import android.annotation.SuppressLint;
 import android.app.Notification;
+import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Intent;
@@ -20,11 +21,14 @@ import android.preference.PreferenceManager;
 import androidx.annotation.Nullable;
 import androidx.core.app.NotificationCompat;
 
+import java.io.DataOutputStream;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 
 public class SleepService extends Service implements SensorEventListener {
@@ -41,6 +45,8 @@ public class SleepService extends Service implements SensorEventListener {
 	private final SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss");
 	private SharedPreferences sharedPreferences;
 	private long lastSaveTimestamp = 0;
+
+	private int bindCount = 0;
 
 	public class MyBinder extends Binder {
 		public SleepService getService() {
@@ -77,6 +83,7 @@ public class SleepService extends Service implements SensorEventListener {
 	@Override
 	public IBinder onBind(Intent intent) {
 		log("service bind " + intent);
+		bindCount++;
 		return new MyBinder();
 	}
 
@@ -89,7 +96,8 @@ public class SleepService extends Service implements SensorEventListener {
 	@Override
 	public boolean onUnbind(Intent intent) {
 		log("service unbind " + intent);
-		if(!isRecording)
+		bindCount--;
+		if(!isRecording && bindCount == 0)
 			stopSelf();
 		return true;
 	}
@@ -97,6 +105,7 @@ public class SleepService extends Service implements SensorEventListener {
 	@Override
 	public void onRebind(Intent intent) {
 		log("service rebind " + intent);
+		bindCount++;
 		super.onRebind(intent);
 	}
 
@@ -113,7 +122,7 @@ public class SleepService extends Service implements SensorEventListener {
 			startForeground(1, notification);
 
 			isRecording = true;
-			sleepFile = makeSleepFile();
+			sleepFile = Utils.makeSleepFile();
 
 			SharedPreferences.Editor editor = sharedPreferences.edit();
 			editor.putBoolean("isRecording", true);
@@ -130,28 +139,24 @@ public class SleepService extends Service implements SensorEventListener {
 		if(isRecording) {
 			sensorManager.unregisterListener(this);
 			save();
-			stopForeground(true);
-			wakeLock.release();
 
 			isRecording = false;
 			SharedPreferences.Editor editor = sharedPreferences.edit();
 			editor.putBoolean("isRecording", false);
 			editor.apply();
-		}
-	}
 
-	private File makeSleepFile() {
-		File sdcard = Environment.getExternalStorageDirectory();
-		File sleepFolder = new File(sdcard, "/sleepapp");
-		File sleepFile = new File(sleepFolder, simpleDateFormat.format(new Date()) + ".slp");
-		sleepFolder.mkdirs();
-		try {
-			if(!sleepFile.createNewFile())
-				return null;
-		} catch (IOException e) {
-			return null;
+			stopForeground(true);
+
+			NotificationCompat.Builder builder = new NotificationCompat.Builder(this, "services");
+			builder.setContentTitle("Analysing Your Sleep");
+			builder.setProgress(1, 0, true);
+			builder.setSmallIcon(R.drawable.bed_icon);
+			builder.setContentIntent(PendingIntent.getActivity(this, 0, new Intent(this, MainActivity.class), 0));
+			Notification notification = builder.build();
+			startForeground(2, notification);
+
+			analyse();
 		}
-		return sleepFile;
 	}
 
 	private void writeSleepFile(File sleepFile, DataPoints dataPoints) {
@@ -212,12 +217,38 @@ public class SleepService extends Service implements SensorEventListener {
 			String logMessage = simpleDateFormat.format(System.currentTimeMillis()) + ": " + message + "\n";
 			System.out.print(logMessage);
 			try {
-				FileWriter fileWriter = new FileWriter("/sdcard/sleeplog.txt", true);
+				FileWriter fileWriter = new FileWriter(new File(Environment.getExternalStorageDirectory(), "/sleeplog.txt"), true);
 				fileWriter.write(logMessage);
 				fileWriter.close();
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
 		}
+	}
+
+	private void analyse() {
+		Thread thread = new Thread(() -> {
+			File sleepAnalysisFile = Utils.analyseSleepFile(sleepFile);
+			if(sleepAnalysisFile != null) {
+				NotificationCompat.Builder builder = new NotificationCompat.Builder(this, "services");
+				builder.setContentTitle("Sleep Ready To View");
+				builder.setContentText("Click here to see how long you slept for!");
+				builder.setSmallIcon(R.drawable.bed_icon);
+				Intent intent = new Intent(this, AnalysisActivity.class);
+				intent.putExtra("file", sleepAnalysisFile);
+				builder.setContentIntent(PendingIntent.getActivity(this, 1, intent, 0));
+				builder.setAutoCancel(false);
+				Notification notification = builder.build();
+				NotificationManager notificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+				notificationManager.notify(3, notification);
+			}
+
+			stopForeground(true);
+			wakeLock.release();
+
+			if(bindCount == 0)
+				stopSelf();
+		}, "Analyse-Thread");
+		thread.start();
 	}
 }

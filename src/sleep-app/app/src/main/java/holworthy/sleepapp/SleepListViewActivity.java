@@ -1,5 +1,6 @@
 package holworthy.sleepapp;
 
+import android.annotation.SuppressLint;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.Intent;
@@ -20,6 +21,7 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
 import java.io.File;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -30,26 +32,30 @@ public class SleepListViewActivity extends AppCompatActivity {
         setContentView(R.layout.activity_sleep_list_view);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
-        ArrayList<SleepFile> sleepFiles = new ArrayList<>();
-        for (File file : MainActivity.getSleepFiles())
-            sleepFiles.add(new SleepFile(file));
+        ArrayList<File> sleepFiles = new ArrayList<>();
+        for (File file : Utils.getSleepAnalysisFiles())
+            sleepFiles.add(file);
 
         ListView fileListView = findViewById(R.id.fileListView);
         TextView emptyTextView = findViewById(R.id.empty);
         fileListView.setEmptyView(emptyTextView);
 
-        class MyArrayAdapter extends ArrayAdapter<SleepFile> {
-            private ArrayList<SleepFile> sleepFiles;
+        class MyArrayAdapter extends ArrayAdapter<File> {
+            private ArrayList<File> sleepFiles;
 
-            public MyArrayAdapter(@NonNull Context context, @NonNull List<SleepFile> sleepFiles) {
+            public MyArrayAdapter(@NonNull Context context, @NonNull List<File> sleepFiles) {
                 super(context, -1, sleepFiles);
-                this.sleepFiles = (ArrayList<SleepFile>) sleepFiles;
+                this.sleepFiles = (ArrayList<File>) sleepFiles;
+            }
+
+            private String plural(long quantity, String singular) {
+                return quantity + " " + (quantity == 1 ? singular : singular + "s");
             }
 
             @NonNull
             @Override
             public View getView(int position, @Nullable View convertView, @NonNull ViewGroup parent) {
-                SleepFile sleepFile = sleepFiles.get(position);
+                File sleepFile = sleepFiles.get(position);
                 LinearLayout linearLayout = new LinearLayout(SleepListViewActivity.this);
                 linearLayout.setOrientation(LinearLayout.VERTICAL);
                 linearLayout.setPadding(30, 30, 30, 30);
@@ -59,6 +65,17 @@ public class SleepListViewActivity extends AppCompatActivity {
                 titleTextView.setText(sleepFile.toString());
                 titleTextView.setTypeface(Typeface.DEFAULT_BOLD);
                 linearLayout.addView(titleTextView);
+                @SuppressLint("SimpleDateFormat")
+                SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+                Thread titleThread = new Thread(() -> {
+                    try {
+                        long startTimestamp = Utils.getSleepAnalysisFileStartTimestamp(sleepFile);
+                        titleTextView.setText(simpleDateFormat.format(startTimestamp));
+                    } catch (Exception e) {
+
+                    }
+                });
+                titleThread.start();
 
                 RelativeLayout infoLayout = new RelativeLayout(SleepListViewActivity.this);
                 linearLayout.addView(infoLayout);
@@ -68,13 +85,13 @@ public class SleepListViewActivity extends AppCompatActivity {
                 Thread thread = new Thread(() -> {
                     long duration;
                     try {
-                        duration = MainActivity.getSleepFileLength(sleepFile.getFile());
+                        duration = Utils.getSleepAnalysisFileDuration(sleepFile);
                     } catch (Exception e) {
                         duration = 0;
                     }
                     long hours = duration / (1000 * 60 * 60);
                     long minutes = (duration / (1000 * 60)) % 60;
-                    String message = hours == 0 && minutes == 0 ? "0 minutes" : hours == 0 ? minutes + " minute" + (minutes == 1 ? "" : "s") : minutes == 0 ? hours + " hour" + (hours == 1 ? "" : "s") : hours + " hour" + (hours == 1 ? "" : "s") + " " + minutes + " minute" + (minutes == 1 ? "" : "s");
+                    String message = hours == 0 && minutes == 0 ? "0 minutes" : hours == 0 ? plural(minutes, "minute") : minutes == 0 ? plural(hours, "hour") : plural(hours, "hour") + " " + plural(minutes, "minute");
                     durationTextView.post(() -> durationTextView.setText(message));
                 });
                 thread.start();
@@ -91,7 +108,7 @@ public class SleepListViewActivity extends AppCompatActivity {
                     builder.setTitle("Delete This Sleep?");
                     builder.setMessage("Are you sure you want to delete, THIS CANNOT BE UNDONE.");
                     builder.setPositiveButton("Confirm", (dialog, which) -> {
-                        if(sleepFiles.get(position).getFile().delete()) {
+                        if(sleepFiles.get(position).delete()) {
                             sleepFiles.remove(position);
                             MyArrayAdapter.this.notifyDataSetChanged();
                         }
@@ -113,9 +130,9 @@ public class SleepListViewActivity extends AppCompatActivity {
         MyArrayAdapter adapter = new MyArrayAdapter(this, sleepFiles);
         fileListView.setAdapter(adapter);
         fileListView.setOnItemClickListener((adapterView, view, position, id) -> {
-            SleepFile sleepFile = (SleepFile) adapterView.getItemAtPosition(position);
+            File sleepFile = (File) adapterView.getItemAtPosition(position);
             Intent intent = new Intent(SleepListViewActivity.this, AnalysisActivity.class);
-            intent.putExtra("file", sleepFile.getFile());
+            intent.putExtra("file", sleepFile);
             startActivity(intent);
             overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left);
         });

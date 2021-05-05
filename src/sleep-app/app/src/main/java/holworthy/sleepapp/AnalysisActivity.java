@@ -1,5 +1,6 @@
 package holworthy.sleepapp;
 
+import android.app.NotificationManager;
 import android.os.Bundle;
 import android.view.MenuItem;
 import android.widget.TextView;
@@ -27,14 +28,17 @@ public class AnalysisActivity extends AppCompatActivity {
 		ActionBar actionBar = getSupportActionBar();
 		actionBar.setDisplayHomeAsUpEnabled(true);
 
-		File sleepFile = (File) getIntent().getSerializableExtra("file");
-		if(sleepFile == null) {
+		File sleepAnalysisFile = (File) getIntent().getSerializableExtra("file");
+		if(sleepAnalysisFile == null) {
 			finish();
 			return;
 		}
 
+		NotificationManager notificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+		notificationManager.cancel(3);
+
 		DataPointGraph graph = findViewById(R.id.graph);
-		graph.setData(sleepFile);
+		graph.setData(sleepAnalysisFile);
 
 		topLeftText = findViewById(R.id.TopLeftText);
 		topLeftText.setText("Fall asleep hour");
@@ -57,6 +61,28 @@ public class AnalysisActivity extends AppCompatActivity {
 //			for(int i = chunk * 20; i < (chunk + 1) * 20; i++)
 //				sum += dataPoints.get(i).getAcceleration();
 //		}
+
+
+//			for (int i = 0; i < gravityFix.length - 1; i++) {
+//				canvas.drawLine(
+//					(float) i / gravityFix.length * getWidth(),
+//					getHeight() - ((gravityFix[i] - min) / (max - min) * getHeight()),
+//					(float) (i + 1) / gravityFix.length * getWidth(),
+//					getHeight() - ((gravityFix[i + 1] - min) / (max - min) * getHeight()),
+//					fgPaint1
+//				);
+//			}
+
+		// draw a line every 15 minutes
+//			long duration = fixedDataPoints.get(fixedDataPoints.size() - 1).getTimestamp() - fixedDataPoints.get(0).getTimestamp();
+//			long fifteenMinutes = duration / (1000 * 60 * 15);
+//			for (int i = 1; i < fifteenMinutes; i++) {
+//				canvas.drawLine((float) i / fifteenMinutes * getWidth(), 0, (float) i / fifteenMinutes * getWidth(), getHeight(), timePaint);
+//			}
+
+//			float significantLine = getHeight() - ((mean + 2 * standardDeviation) / (max - min)) * getHeight();
+//			canvas.drawLine(0, significantLine, getWidth(), significantLine, timePaint);
+
 	}
 
 	@Override
