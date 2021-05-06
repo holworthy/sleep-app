@@ -78,9 +78,10 @@ public class Utils {
 	public static File makeSleepAnalysisFile(File sleepFile) {
 		File sleepAnalysisFile = new File(getSleepFolder(), sleepFile.getName() + "a");
 		try {
-			if(!sleepAnalysisFile.createNewFile())
+			if(!sleepAnalysisFile.exists() && !sleepAnalysisFile.createNewFile())
 				return null;
 		} catch (IOException e) {
+			e.printStackTrace();
 			return null;
 		}
 		return sleepAnalysisFile;
@@ -143,7 +144,7 @@ public class Utils {
 
 			// calculate min and max minutes
 			log("min and max values");
-			float min = 0, max = Float.MAX_VALUE;
+			float min = Float.MAX_VALUE, max = 0;
 			for (int minute = 0; minute < minutes; minute++) {
 				if (minuteSums[minute] < min)
 					min = minuteSums[minute];
@@ -155,7 +156,7 @@ public class Utils {
 			log("significant values");
 			ArrayList<MinuteSum> significantMinutes = new ArrayList<>();
 			for (int minute = 0; minute < minutes; minute++)
-				if (minuteSums[minute] > mean + 2 * standardDeviation)
+				if (minuteSums[minute] > mean + standardDeviation)
 					significantMinutes.add(new MinuteSum(dataPoints.get(minute * 60 * 20).getTimestamp(), minuteSums[minute]));
 
 			log("saving analysis file");
@@ -174,10 +175,16 @@ public class Utils {
 				dataOutputStream.writeFloat(mean);
 				// standard deviation
 				dataOutputStream.writeFloat(standardDeviation);
-				//min
+				// min
 				dataOutputStream.writeFloat(min);
 				// max
 				dataOutputStream.writeFloat(max);
+				// sleep points
+				// TODO: write actual sleep points
+				dataOutputStream.writeInt(0);
+				// wake points
+				// TODO: write actual wake points
+				dataOutputStream.writeInt(0);
 				// significant points
 				dataOutputStream.writeInt(significantMinutes.size());
 				for (MinuteSum minuteSum : significantMinutes) {
@@ -185,11 +192,13 @@ public class Utils {
 					dataOutputStream.writeFloat(minuteSum.getSum());
 				}
 
+				dataOutputStream.flush();
 				dataOutputStream.close();
 				fileOutputStream.close();
 
 				return sleepAnalysisFile;
 			} catch (Exception e) {
+				e.printStackTrace();
 				// TODO: notification for error
 			}
 		}

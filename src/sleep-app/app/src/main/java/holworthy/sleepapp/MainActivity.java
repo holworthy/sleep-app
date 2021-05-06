@@ -15,6 +15,8 @@ import android.widget.Button;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
+import java.io.File;
+
 public class MainActivity extends AppCompatActivity {
 
 	private Button analyseButton;
@@ -88,6 +90,12 @@ public class MainActivity extends AppCompatActivity {
 			updateStartStopButton();
 		});
 		startStopButton.setEnabled(false);
+
+		// CODE FOR REGENERATING EVERY SLPA FILE
+//		(new Thread(() -> {
+//			for(File sleepFile : Utils.getSleepFiles())
+//				Utils.analyseSleepFile(sleepFile);
+//		})).start();
 	}
 
 	private void updateStartStopButton() {

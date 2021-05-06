@@ -18,11 +18,13 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
 
 import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class SleepListViewActivity extends AppCompatActivity {
@@ -30,11 +32,12 @@ public class SleepListViewActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_sleep_list_view);
-        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+        ActionBar actionBar = getSupportActionBar();
+        if (actionBar != null) {
+            actionBar.setDisplayHomeAsUpEnabled(true);
+        }
 
-        ArrayList<File> sleepFiles = new ArrayList<>();
-        for (File file : Utils.getSleepAnalysisFiles())
-            sleepFiles.add(file);
+        ArrayList<File> sleepFiles = new ArrayList<>(Arrays.asList(Utils.getSleepAnalysisFiles()));
 
         ListView fileListView = findViewById(R.id.fileListView);
         TextView emptyTextView = findViewById(R.id.empty);

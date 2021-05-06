@@ -10,9 +10,6 @@ import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
 
 import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
 
 public class AnalysisActivity extends AppCompatActivity {
 	private TextView topLeftText;
@@ -26,7 +23,9 @@ public class AnalysisActivity extends AppCompatActivity {
 		setContentView(R.layout.activity_analysis);
 
 		ActionBar actionBar = getSupportActionBar();
-		actionBar.setDisplayHomeAsUpEnabled(true);
+		if(actionBar != null) {
+			actionBar.setDisplayHomeAsUpEnabled(true);
+		}
 
 		File sleepAnalysisFile = (File) getIntent().getSerializableExtra("file");
 		if(sleepAnalysisFile == null) {
@@ -38,7 +37,7 @@ public class AnalysisActivity extends AppCompatActivity {
 		notificationManager.cancel(3);
 
 		DataPointGraph graph = findViewById(R.id.graph);
-		graph.setData(sleepAnalysisFile);
+		graph.setAnalysisFile(sleepAnalysisFile);
 
 		topLeftText = findViewById(R.id.TopLeftText);
 		topLeftText.setText("Fall asleep hour");
@@ -51,9 +50,6 @@ public class AnalysisActivity extends AppCompatActivity {
 
 		bottomRightText = findViewById(R.id.BottomRightText);
 		bottomRightText.setText("Another");
-
-//		DataPointGraph dataPointGraph = new DataPointGraph(this, dataPoints);
-//		setContentView(dataPointGraph);
 
 //		int seconds = dataPoints.size() / 20;
 //		for(int chunk = 0; chunk < seconds; chunk++) {
