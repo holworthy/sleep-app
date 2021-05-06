@@ -24,13 +24,10 @@ public class DataPointGraph extends View {
 	private long endTimestamp = 0;
 	private float mean = 0;
 	private float standardDeviation = 0;
-	private int sleepPointCount = 0;
 	private float min = 0;
 	private float max = 0;
 	private ArrayList<Long> sleepPoints = new ArrayList<>();
-	private int wakePointCount = 0;
 	private ArrayList<Long> wakePoints = new ArrayList<>();
-	private int significantPointCount = 0;
 	private ArrayList<MinuteSum> significant = new ArrayList<>();
 
 	public DataPointGraph(Context context, AttributeSet attributeSet) {
@@ -48,38 +45,38 @@ public class DataPointGraph extends View {
 		fgPaint2.setAntiAlias(true);
 		timePaint = new Paint();
 		timePaint.setColor(Color.GREEN);
-		timePaint.setAlpha(255);
+		timePaint.setAlpha(127);
 	}
 
 	public void setAnalysisFile(File analysisFile) {
 		System.out.println(analysisFile);
 		Thread thread = new Thread(() -> {
 			try {
-				// TODO: try with fileinputstream and datainputstream
 				RandomAccessFile randomAccessFile = new RandomAccessFile(analysisFile, "r");
 				startTimestamp = randomAccessFile.readLong();
-				System.out.println("start:" + startTimestamp);
 				endTimestamp = randomAccessFile.readLong();
-				System.out.println("end:" + endTimestamp);
 				mean = randomAccessFile.readFloat();
-				System.out.println("mean:" + mean);
 				standardDeviation = randomAccessFile.readFloat();
-				System.out.println("stddev:" + standardDeviation);
 				min = randomAccessFile.readFloat();
-				System.out.println("min:" + min);
 				max = randomAccessFile.readFloat();
-				System.out.println("max:" + max);
-				sleepPointCount = randomAccessFile.readInt();
-				System.out.println("sleep:" + sleepPointCount);
-				ArrayList<Long> sleepPoints = new ArrayList<>();
-				wakePointCount = randomAccessFile.readInt();
-				System.out.println("wake:" + wakePointCount);
-				ArrayList<Long> wakePoints = new ArrayList<>();
-				significantPointCount = randomAccessFile.readInt();
-				System.out.println("sig:" + significantPointCount);
+				int sleepPointCount = randomAccessFile.readInt();
+				sleepPoints = new ArrayList<>();
+				synchronized (sleepPoints) {
+					for (int i = 0; i < sleepPointCount; i++)
+						sleepPoints.add(randomAccessFile.readLong());
+				}
+				int wakePointCount = randomAccessFile.readInt();
+				wakePoints = new ArrayList<>();
+				synchronized (wakePoints) {
+					for (int i = 0; i < wakePointCount; i++)
+						wakePoints.add(randomAccessFile.readLong());
+				}
+				int significantPointCount = randomAccessFile.readInt();
 				significant = new ArrayList<>();
-				for(int i = 0; i < significantPointCount; i++)
-					significant.add(new MinuteSum(randomAccessFile.readLong(), randomAccessFile.readFloat()));
+				synchronized (significant) {
+					for (int i = 0; i < significantPointCount; i++)
+						significant.add(new MinuteSum(randomAccessFile.readLong(), randomAccessFile.readFloat()));
+				}
 				randomAccessFile.close();
 				invalidate();
 			} catch (IOException e) {
@@ -98,9 +95,8 @@ public class DataPointGraph extends View {
 		for (int i = 1; i < fifteenMinutes; i++)
 			canvas.drawLine((float) i / fifteenMinutes * getWidth(), 0, (float) i / fifteenMinutes * getWidth(), getHeight(), timePaint);
 
-		System.out.println(significant.size());
-		if(significant.size() > 0)
-			for(MinuteSum minuteSum : significant)
+		synchronized (significant) {
+			for (MinuteSum minuteSum : significant)
 				canvas.drawRect(
 					(float) (minuteSum.getTimestamp() - startTimestamp) / duration * getWidth(),
 					getHeight() - (minuteSum.getSum() - min) / (max - min) * getHeight(),
@@ -108,5 +104,20 @@ public class DataPointGraph extends View {
 					getHeight(),
 					fgPaint2
 				);
+		}
+
+		synchronized (sleepPoints) {
+			for (Long sleepPoint : sleepPoints) {
+				float x = (float) (sleepPoint - startTimestamp) / (endTimestamp - startTimestamp) * getWidth();
+				canvas.drawLine(x, 0, x, getHeight(), fgPaint1);
+			}
+		}
+
+		synchronized (wakePoints) {
+			for (Long wakePoint : wakePoints) {
+				float x = (float) (wakePoint - startTimestamp) / (endTimestamp - startTimestamp) * getWidth();
+				canvas.drawLine(x, 0, x, getHeight(), fgPaint1);
+			}
+		}
 	}
 }

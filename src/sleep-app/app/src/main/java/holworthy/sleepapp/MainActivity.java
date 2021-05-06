@@ -95,6 +95,7 @@ public class MainActivity extends AppCompatActivity {
 //		(new Thread(() -> {
 //			for(File sleepFile : Utils.getSleepFiles())
 //				Utils.analyseSleepFile(sleepFile);
+//			System.out.println("DONE");
 //		})).start();
 	}
 

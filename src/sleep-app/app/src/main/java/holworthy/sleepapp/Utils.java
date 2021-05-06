@@ -11,6 +11,7 @@ import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.lang.reflect.Array;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -99,11 +100,9 @@ public class Utils {
 			// TODO: make notification because analysis failed
 		} else {
 			// space the data points evenly at 50ms apart
-			log("spacing data points");
 			dataPoints = dataPoints.getFixed();
 
 			// gravity filter
-			log("applying gravity filter");
 			float gx = 0, gy = 0, gz = 0;
 			for (DataPoint dataPoint : dataPoints) {
 				gx = 0.9f * gx + 0.1f * dataPoint.getXAcceleration();
@@ -112,6 +111,44 @@ public class Utils {
 				dataPoint.setXAcceleration(dataPoint.getXAcceleration() - gx);
 				dataPoint.setYAcceleration(dataPoint.getYAcceleration() - gy);
 				dataPoint.setZAcceleration(dataPoint.getZAcceleration() - gz);
+			}
+
+			// mean
+			float total = 0;
+			for(DataPoint dataPoint : dataPoints)
+				total += dataPoint.getAcceleration();
+			float mean = total / dataPoints.size();
+
+			// calculate standard deviation
+			total = 0;
+			for(DataPoint dataPoint : dataPoints) {
+				float diff = dataPoint.getAcceleration() - mean;
+				total += diff * diff;
+			}
+			float variance = total / dataPoints.size();
+			float standardDeviation = (float) Math.sqrt(variance);
+
+			// calculate fall asleep points
+			int lastAwakeMovement = 0;
+			ArrayList<Long> fallAsleepPoints = new ArrayList<>();
+			for(int i = 0; i < dataPoints.size(); i++) {
+				if(dataPoints.get(i).getAcceleration() > mean + 5 * standardDeviation)
+					lastAwakeMovement = i;
+				if(lastAwakeMovement < i - 20 * 60 * 10) {
+					fallAsleepPoints.add(dataPoints.get(i - 20 * 60 * 5).getTimestamp());
+					break;
+				}
+			}
+
+			lastAwakeMovement = dataPoints.size() - 1;
+			ArrayList<Long> wakeUpPoints = new ArrayList<>();
+			for(int i = dataPoints.size() - 1; i >= 0; i--) {
+				if(dataPoints.get(i).getAcceleration() > mean + 5 * standardDeviation)
+					lastAwakeMovement = i;
+				if(lastAwakeMovement > i + 20 * 60 * 10) {
+					fallAsleepPoints.add(dataPoints.get(i + 20 * 60 * 5).getTimestamp());
+					break;
+				}
 			}
 
 			// sum movement in each minute
@@ -125,22 +162,22 @@ public class Utils {
 				}
 			}
 
-			// calculate mean
+			// calculate minute mean
 			log("mean");
-			float total = 0;
+			total = 0;
 			for (int minute = 0; minute < minutes; minute++)
 				total += minuteSums[minute];
-			float mean = total / minutes;
+			float minuteMean = total / minutes;
 
-			// calculate standard deviation
+			// calculate minute standard deviation
 			log("standard deviation");
 			total = 0;
 			for (int minute = 0; minute < minutes; minute++) {
 				float diff = minuteSums[minute] - mean;
 				total += diff * diff;
 			}
-			float variance = total / minutes;
-			float standardDeviation = (float) Math.sqrt(variance);
+			float minuteVariance = total / minutes;
+			float minuteStandardDeviation = (float) Math.sqrt(variance);
 
 			// calculate min and max minutes
 			log("min and max values");
@@ -172,19 +209,21 @@ public class Utils {
 				// write end time
 				dataOutputStream.writeLong(dataPoints.get(dataPoints.size() - 1).getTimestamp());
 				// mean
-				dataOutputStream.writeFloat(mean);
+				dataOutputStream.writeFloat(minuteMean);
 				// standard deviation
-				dataOutputStream.writeFloat(standardDeviation);
+				dataOutputStream.writeFloat(minuteStandardDeviation);
 				// min
 				dataOutputStream.writeFloat(min);
 				// max
 				dataOutputStream.writeFloat(max);
 				// sleep points
-				// TODO: write actual sleep points
-				dataOutputStream.writeInt(0);
+				dataOutputStream.writeInt(wakeUpPoints.size());
+				for(int i = 0; i < wakeUpPoints.size(); i++)
+					dataOutputStream.writeLong(wakeUpPoints.get(i));
 				// wake points
-				// TODO: write actual wake points
-				dataOutputStream.writeInt(0);
+				dataOutputStream.writeInt(fallAsleepPoints.size());
+				for(int i = 0; i < fallAsleepPoints.size(); i++)
+					dataOutputStream.writeLong(fallAsleepPoints.get(i));
 				// significant points
 				dataOutputStream.writeInt(significantMinutes.size());
 				for (MinuteSum minuteSum : significantMinutes) {
