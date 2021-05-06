@@ -69,7 +69,7 @@ public class SleepListViewActivity extends AppCompatActivity {
                 Thread titleThread = new Thread(() -> {
                     try {
                         long startTimestamp = Utils.getSleepAnalysisFileStartTimestamp(sleepFile);
-                        titleTextView.setText(simpleDateFormat.format(startTimestamp));
+                        titleTextView.post(() -> titleTextView.setText(simpleDateFormat.format(startTimestamp)));
                     } catch (Exception e) {
 
                     }
@@ -88,9 +88,7 @@ public class SleepListViewActivity extends AppCompatActivity {
                     } catch (Exception e) {
                         duration = 0;
                     }
-                    long hours = duration / (1000 * 60 * 60);
-                    long minutes = (duration / (1000 * 60)) % 60;
-                    String message = hours == 0 && minutes == 0 ? "0 minutes" : hours == 0 ? Utils.plural(minutes, "minute") : minutes == 0 ? Utils.plural(hours, "hour") : Utils.plural(hours, "hour") + " " + Utils.plural(minutes, "minute");
+                    String message = Utils.timeStringFromDuration(duration);
                     durationTextView.post(() -> durationTextView.setText(message));
                 });
                 thread.start();

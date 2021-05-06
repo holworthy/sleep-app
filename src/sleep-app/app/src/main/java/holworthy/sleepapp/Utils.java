@@ -21,8 +21,21 @@ public class Utils {
 	public static final SimpleDateFormat filenameFormatter = new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss");
 	public static final String sleepFolderName = "sleepapp";
 
+	public static final SimpleDateFormat dateFormatter = new SimpleDateFormat("HH:mm:ss");
+
+	public static String getTimeString(long timestamp){
+		return dateFormatter.format(timestamp);
+	}
+
 	public static String filenameFromTimestamp(long timestamp) {
 		return filenameFormatter.format(timestamp);
+	}
+
+	public static String timeStringFromDuration(long duration){
+		long hours = duration / (1000 * 60 * 60);
+		long minutes = (duration / (1000 * 60)) % 60;
+		String message = hours == 0 && minutes == 0 ? "0 minutes" : hours == 0 ? Utils.plural(minutes, "minute") : minutes == 0 ? Utils.plural(hours, "hour") : Utils.plural(hours, "hour") + " " + Utils.plural(minutes, "minute");
+		return message;
 	}
 
 	public static String plural(long quantity, String singular) {
@@ -150,7 +163,7 @@ public class Utils {
 				if(dataPoints.get(i).getAcceleration() > mean + 5 * standardDeviation)
 					lastAwakeMovement = i;
 				if(lastAwakeMovement > i + 20 * 60 * 10) {
-					fallAsleepPoints.add(dataPoints.get(i + 20 * 60 * 5).getTimestamp());
+					wakeUpPoints.add(dataPoints.get(i + 20 * 60 * 5).getTimestamp());
 					break;
 				}
 			}
@@ -221,13 +234,13 @@ public class Utils {
 				// max
 				dataOutputStream.writeFloat(max);
 				// sleep points
-				dataOutputStream.writeInt(wakeUpPoints.size());
-				for(int i = 0; i < wakeUpPoints.size(); i++)
-					dataOutputStream.writeLong(wakeUpPoints.get(i));
-				// wake points
 				dataOutputStream.writeInt(fallAsleepPoints.size());
 				for(int i = 0; i < fallAsleepPoints.size(); i++)
 					dataOutputStream.writeLong(fallAsleepPoints.get(i));
+				// wake points
+				dataOutputStream.writeInt(wakeUpPoints.size());
+				for(int i = 0; i < wakeUpPoints.size(); i++)
+					dataOutputStream.writeLong(wakeUpPoints.get(i));
 				// significant points
 				dataOutputStream.writeInt(significantMinutes.size());
 				for (MinuteSum minuteSum : significantMinutes) {

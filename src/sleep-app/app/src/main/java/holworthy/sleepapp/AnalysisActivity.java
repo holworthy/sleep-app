@@ -10,6 +10,9 @@ import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
 
 import java.io.File;
+import java.io.IOException;
+import java.io.RandomAccessFile;
+import java.util.ArrayList;
 
 public class AnalysisActivity extends AppCompatActivity {
 	private TextView topLeftText;
@@ -45,12 +48,47 @@ public class AnalysisActivity extends AppCompatActivity {
 		topRightText = findViewById(R.id.TopRightText);
 		topRightText.setText("Wake Up Hour");
 
+		Thread thread = new Thread(() -> {
+			try {
+				RandomAccessFile randomAccessFile = new RandomAccessFile(sleepAnalysisFile, "r");
+				randomAccessFile.seek(32);
+				int sleepPointCount = randomAccessFile.readInt();
+				ArrayList<Long> sleepPoints = new ArrayList<>();
+				synchronized (sleepPoints) {
+					for (int i = 0; i < sleepPointCount; i++)
+						sleepPoints.add(randomAccessFile.readLong());
+				}
+				int wakePointCount = randomAccessFile.readInt();
+				ArrayList<Long> wakePoints = new ArrayList<>();
+				synchronized (wakePoints) {
+					for (int i = 0; i < wakePointCount; i++)
+						wakePoints.add(randomAccessFile.readLong());
+				}
+				randomAccessFile.close();
+
+				final String fallAsleepMessage = "Fall asleep hour:\n" + Utils.getTimeString(sleepPoints.get(0));
+				topLeftText.post( () -> topLeftText.setText(fallAsleepMessage));
+
+				final String wakeUpMessage = "Wake up hour:\n" + Utils.getTimeString(wakePoints.get(wakePoints.size() - 1));
+				topRightText.post( () -> topRightText.setText(wakeUpMessage));
+
+				final String totalSleepMessage = "Total sleep time:\n"+ Utils.timeStringFromDuration(wakePoints.get(wakePoints.size() - 1) - sleepPoints.get(0));
+				bottomLeftText.post( () -> bottomLeftText.setText(totalSleepMessage));
+			} catch (IOException e) {
+				e.printStackTrace();
+			} catch (Exception e){
+				e.printStackTrace();
+
+			}
+		}, "Read-Thread");
+		thread.start();
+
 		bottomLeftText = findViewById(R.id.BottomLeftText);
 		bottomLeftText.setText("Total sleep time");
 
 		bottomRightText = findViewById(R.id.BottomRightText);
 		bottomRightText.setText("Time in bed");
-		Thread thread = new Thread(() -> {
+		Thread thread2 = new Thread(() -> {
 			long duration;
 			try {
 				duration = Utils.getSleepAnalysisFileDuration(sleepAnalysisFile);
@@ -65,7 +103,7 @@ public class AnalysisActivity extends AppCompatActivity {
 			message.append(time);
 			bottomRightText.post(() -> bottomRightText.setText(message.toString()));
 		});
-	thread.start();
+	thread2.start();
 
 //		int seconds = dataPoints.size() / 20;
 //		for(int chunk = 0; chunk < seconds; chunk++) {

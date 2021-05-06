@@ -42,7 +42,7 @@ public class DataPointGraph extends View {
 		fgPaint2 = new Paint();
 		fgPaint2.setColor(Color.YELLOW);
 		fgPaint2.setStrokeWidth(2);
-		fgPaint2.setAntiAlias(true);
+		fgPaint2.setAntiAlias(false);
 		timePaint = new Paint();
 		timePaint.setColor(Color.GREEN);
 		timePaint.setAlpha(127);
