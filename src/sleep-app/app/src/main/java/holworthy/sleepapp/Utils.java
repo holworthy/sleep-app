@@ -24,6 +24,10 @@ public class Utils {
 		return filenameFormatter.format(timestamp);
 	}
 
+	public static String plural(long quantity, String singular) {
+		return quantity + " " + (quantity == 1 ? singular : singular + "s");
+	}
+
 	public static File getSleepFolder() {
 		return new File(Environment.getExternalStorageDirectory(), "/" + sleepFolderName);
 	}
