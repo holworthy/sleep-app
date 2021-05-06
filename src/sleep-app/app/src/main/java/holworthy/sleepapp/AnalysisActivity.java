@@ -49,7 +49,23 @@ public class AnalysisActivity extends AppCompatActivity {
 		bottomLeftText.setText("Total sleep time");
 
 		bottomRightText = findViewById(R.id.BottomRightText);
-		bottomRightText.setText("Another");
+		bottomRightText.setText("Time in bed");
+		Thread thread = new Thread(() -> {
+			long duration;
+			try {
+				duration = Utils.getSleepAnalysisFileDuration(sleepAnalysisFile);
+			} catch (Exception e) {
+				duration = 0;
+			}
+			long hours = duration / (1000 * 60 * 60);
+			long minutes = (duration / (1000 * 60)) % 60;
+			StringBuilder message = new StringBuilder();
+			message.append("Time in bed:\n");
+			String time = hours == 0 && minutes == 0 ? "0 minutes" : hours == 0 ? Utils.plural(minutes, "minute") : minutes == 0 ? Utils.plural(hours, "hour") : Utils.plural(hours, "hour") + " " + Utils.plural(minutes, "minute");
+			message.append(time);
+			bottomRightText.post(() -> bottomRightText.setText(message.toString()));
+		});
+	thread.start();
 
 //		int seconds = dataPoints.size() / 20;
 //		for(int chunk = 0; chunk < seconds; chunk++) {

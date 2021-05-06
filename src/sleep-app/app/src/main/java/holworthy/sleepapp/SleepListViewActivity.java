@@ -51,10 +51,6 @@ public class SleepListViewActivity extends AppCompatActivity {
                 this.sleepFiles = (ArrayList<File>) sleepFiles;
             }
 
-            private String plural(long quantity, String singular) {
-                return quantity + " " + (quantity == 1 ? singular : singular + "s");
-            }
-
             @NonNull
             @Override
             public View getView(int position, @Nullable View convertView, @NonNull ViewGroup parent) {
@@ -94,7 +90,7 @@ public class SleepListViewActivity extends AppCompatActivity {
                     }
                     long hours = duration / (1000 * 60 * 60);
                     long minutes = (duration / (1000 * 60)) % 60;
-                    String message = hours == 0 && minutes == 0 ? "0 minutes" : hours == 0 ? plural(minutes, "minute") : minutes == 0 ? plural(hours, "hour") : plural(hours, "hour") + " " + plural(minutes, "minute");
+                    String message = hours == 0 && minutes == 0 ? "0 minutes" : hours == 0 ? Utils.plural(minutes, "minute") : minutes == 0 ? Utils.plural(hours, "hour") : Utils.plural(hours, "hour") + " " + Utils.plural(minutes, "minute");
                     durationTextView.post(() -> durationTextView.setText(message));
                 });
                 thread.start();
